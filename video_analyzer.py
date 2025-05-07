@@ -1,13 +1,10 @@
 import os
-import sys
-import time
-from datetime import datetime
-from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from IPython.display import Markdown, display
+from rich.console import Console
+from rich.markdown import Markdown
 
 from prompts import PromptManager
 from report_saver import ReportSaver
@@ -32,11 +29,12 @@ class VideoAnalyzer:
         self.client = genai.Client(api_key=self.api_key)
         self.report_saver = ReportSaver(reports_dir)
         self.prompt_manager = PromptManager()
+        self.console = Console()
 
     def generate_report(
         self,
         video_url,
-        model="gemini-2.5-pro-exp-03-25",  # gemini-2.5-flash-preview-04-17
+        model="gemini-2.5-pro-exp-03-25",
         prompt_type="simple",
         save_to_file=True,
         filename=None,
@@ -57,35 +55,32 @@ class VideoAnalyzer:
         system_instruction = self.prompt_manager.get_prompt(prompt_type)
         prompt_config = self.prompt_manager.get_prompt_config(prompt_type)
 
-        # Start loading animation
-        loading_chars = "|/-\\"
-        i = 0
-        print("Generating report", end="", flush=True)
+        with self.console.status("[bold green]Generating report...") as status:
+            try:
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=types.Content(
+                        parts=[
+                            types.Part(file_data=types.FileData(file_uri=video_url)),
+                            types.Part(text="Please generate report from this video"),
+                        ]
+                    ),
+                    config=types.GenerateContentConfig(
+                        temperature=prompt_config.get("temperature", 0.2),
+                        top_p=prompt_config.get("top_p", 0.95),
+                        system_instruction=system_instruction,
+                    ),
+                )
 
-        response = self.client.models.generate_content(
-            model=model,
-            contents=types.Content(
-                parts=[
-                    types.Part(file_data=types.FileData(file_uri=video_url)),
-                    types.Part(text="Please generate report from this video"),
-                ]
-            ),
-            config=types.GenerateContentConfig(
-                temperature=prompt_config.get("temperature", 0.2),
-                top_p=prompt_config.get("top_p", 0.95),
-                system_instruction=system_instruction,
-            ),
-        )
+                report_text = response.text
 
-        # End loading animation
-        print("\rReport generated!      ")
+                if save_to_file:
+                    self.report_saver.save_report(report_text, filename)
 
-        report_text = response.text
-
-        if save_to_file:
-            self.report_saver.save_report(report_text, filename)
-
-        return report_text
+                return report_text
+            except Exception as e:
+                self.console.print(f"[bold red]Error generating report: {e}")
+                return None
 
     def display_report(self, report_text):
         """
@@ -94,7 +89,10 @@ class VideoAnalyzer:
         Args:
             report_text (str): The report text to display
         """
-        print(report_text)
+        if report_text:
+            self.console.print(Markdown(report_text))
+        else:
+            self.console.print("[bold red]No report to display")
 
     def list_available_prompts(self):
         """
@@ -107,29 +105,28 @@ class VideoAnalyzer:
 
 
 def main():
-    # Example usage
-    analyzer = VideoAnalyzer()
-    video_url = "https://youtu.be/QdWnkH3TGDU"  # Example video URL
+    """Main entry point for the video analyzer"""
+    try:
+        analyzer = VideoAnalyzer()
+        video_url = "https://youtu.be/QdWnkH3TGDU"
 
-    # List available prompts
-    # print("Available prompts:")
-    # for prompt_type, description in analyzer.list_available_prompts().items():
-    #     print(f"- {prompt_type}: {description}")
+        # Just call generate_report, don't wrap it in another status spinner
+        report = analyzer.generate_report(
+            video_url, prompt_type="simple", save_to_file=True
+        )
+        analyzer.display_report(report)
 
-    # Generate report using simple prompt and save to file
-    report = analyzer.generate_report(
-        video_url, prompt_type="simple", save_to_file=True
-    )
-    analyzer.display_report(report)
+        improved_report = analyzer.generate_report(
+            video_url,
+            prompt_type="detailed",
+            save_to_file=True,
+            filename="detailed_analysis",
+        )
+        analyzer.display_report(improved_report)
 
-    # Generate report using detailed prompt with custom filename
-    improved_report = analyzer.generate_report(
-        video_url,
-        prompt_type="detailed",
-        save_to_file=True,
-        filename="detailed_analysis",
-    )
-    analyzer.display_report(improved_report)
+    except Exception as e:
+        console = Console()
+        console.print(f"[bold red]An error occurred: {e}")
 
 
 if __name__ == "__main__":

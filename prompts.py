@@ -20,7 +20,7 @@ class PromptTemplate:
 
     def __post_init__(self):
         if self.config is None:
-            self.config = {"temperature": 0.2, "top_p": 0.95, "max_tokens": 2000}
+            self.config = {"temperature": 0.2, "top_p": 0.95}
 
 
 class PromptManager:
@@ -180,7 +180,7 @@ class PromptManager:
         template_path = self.templates_dir / f"{prompt_type}.toml"
         with open(
             template_path, "wb"
-        ) as f:  # TOML files should be written in binary mode
+        ) as f:  
             tomli_writer.dump(template_data, f)
 
         return template_path

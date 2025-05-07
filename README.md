@@ -1,113 +1,65 @@
-# Video Analyzer
+# Excavator Video Analyzer
 
-This Python module provides functionality to analyze excavator operation videos using Google's Gemini API. It generates detailed performance reports with actionable feedback.
+## Overview
 
-## Project Structure
-
-```
-.
-├── video_analyzer.py    # Main analyzer class
-├── report_saver.py      # Report saving functionality
-├── prompts.py          # Prompt management system
-├── requirements.txt     # Project dependencies
-└── reports/            # Default directory for saved reports
-```
-
-## Setup
-
-1. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Create a `.env` file in the project root directory and add your Gemini API key:
-```
-GENAI_API_KEY=your_api_key_here
-```
-
-## Usage
-
-```python
-from video_analyzer import VideoAnalyzer
-
-# Initialize the analyzer with custom reports directory (optional)
-analyzer = VideoAnalyzer(reports_dir="my_reports")
-
-# List available prompt types
-print("Available prompts:")
-for prompt_type, description in analyzer.list_available_prompts().items():
-    print(f"- {prompt_type}: {description}")
-
-# Generate a report using the simple prompt
-video_url = "https://youtu.be/your_video_url"
-report = analyzer.generate_report(
-    video_url,
-    prompt_type="simple",  # or "detailed" for more comprehensive analysis
-    save_to_file=True,
-    filename="my_report"  # Optional custom filename
-)
-analyzer.display_report(report)
-```
+The Excavator Video Analyzer is a Python tool that generates detailed performance reports from excavator operation videos using Google Gemini AI. It leverages prompt templates and provides clear, markdown-formatted reports directly in your terminal, with interactive progress spinners and robust error handling.
 
 ## Features
 
-- Analyzes excavator operation videos using Gemini AI
-- Generates detailed performance reports with timestamps
-- Provides both simple and comprehensive analysis options
-- Includes strengths identification and areas for improvement
-- Gives personalized improvement tips
-- Assigns an overall performance score with justification
-- Automatically saves reports as markdown files
-- Supports custom filenames and report directories
-- Flexible prompt management system
+- **Automated Video Analysis:** Generate performance reports from YouTube or video URLs.
+- **Prompt Templates:** Easily switch between different analysis styles (simple, detailed) using TOML-based prompt templates.
+- **Rich Terminal Output:** Uses the [rich](https://github.com/Textualize/rich) library for colored, markdown-formatted output and interactive spinners.
+- **Robust Error Handling:** Clear, color-coded error messages for a smooth user experience.
+- **Easy Report Saving:** Automatically saves reports as markdown files in a specified directory.
 
-## Prompt Management
+## Installation
 
-The system includes a flexible prompt management system that allows you to:
-- Use different types of analysis prompts
-- Add new custom prompts
-- Version control your prompts
-- Get information about available prompts
+1. **Clone the repository:**
+   ```bash
+   git clone git@github.com:afschowdhury/excavator-video-analyzer.git
+   cd excavator-video-analyzer
+   ```
 
-Available default prompts:
-- `simple`: Basic analysis focusing on key performance metrics
-- `detailed`: Comprehensive analysis with detailed breakdowns
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-You can add custom prompts using the `PromptManager`:
+3. **Set up your environment:**
+   - Create a `.env` file in the project root with your Google Gemini API key:
+     ```env
+     GENAI_API_KEY=your_gemini_api_key_here
+     ```
 
-```python
-from prompts import PromptManager
+## Usage
 
-manager = PromptManager()
-manager.add_prompt(
-    prompt_type="custom",
-    template="Your custom prompt template here...",
-    description="Description of what your prompt does",
-    version="1.0"
-)
+Run the analyzer script from your terminal:
+
+```bash
+python video_analyzer.py
 ```
 
-## File Saving
+- The script will prompt the Gemini model to analyze a sample video and display the report in your terminal.
+- Reports are saved in the `reports/` directory by default.
+- You can customize the video URL and prompt type by editing the `main()` function in `video_analyzer.py`.
 
-Reports are automatically saved as markdown files in the specified reports directory (default: `reports/`). The files are named using:
-- Custom filename if provided (e.g., `my_report.md`)
-- Timestamp-based name if no custom filename is provided (e.g., `excavator_report_20240321_143022.md`)
+## Configuration
 
-The file saving functionality is handled by the `ReportSaver` class in `report_saver.py`, which can be used independently if needed:
+- **Prompt Templates:**
+  - Located in the `prompt_templates/` directory as TOML files (e.g., `simple.toml`, `detailed.toml`).
+  - You can add or modify templates to change the analysis style.
+- **Reports Directory:**
+  - By default, reports are saved in the `reports/` folder. You can change this in the `VideoAnalyzer` constructor.
 
-```python
-from report_saver import ReportSaver
+## Example Output
 
-saver = ReportSaver(reports_dir="my_reports")
-file_path = saver.save_report(report_text, filename="custom_report")
+```
+Generating report...
+# Excavator Simulator Performance Report
+
+1. Detailed Action Analysis:
+...
+
+Report saved to: reports/excavator_report_20250507_122111.md
 ```
 
-## Requirements
-
-- Python 3.7+
-- Google Gemini API key
-- Internet connection for API access
-
-## Note
-
-The video URLs must be publicly accessible for the Gemini API to analyze them. 
