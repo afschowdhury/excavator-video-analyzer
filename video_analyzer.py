@@ -1,4 +1,6 @@
 import os
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -34,7 +36,7 @@ class VideoAnalyzer:
     def generate_report(
         self,
         video_url,
-        model="gemini-2.5-flash-preview-04-17",
+        model="gemini-2.5-pro-exp-03-25",  # gemini-2.5-flash-preview-04-17
         prompt_type="simple",
         save_to_file=True,
         filename=None,
@@ -53,6 +55,12 @@ class VideoAnalyzer:
             str: Generated report in markdown format
         """
         system_instruction = self.prompt_manager.get_prompt(prompt_type)
+        prompt_config = self.prompt_manager.get_prompt_config(prompt_type)
+
+        # Start loading animation
+        loading_chars = "|/-\\"
+        i = 0
+        print("Generating report", end="", flush=True)
 
         response = self.client.models.generate_content(
             model=model,
@@ -63,11 +71,14 @@ class VideoAnalyzer:
                 ]
             ),
             config=types.GenerateContentConfig(
-                temperature=0.2,
-                top_p=0.95,
+                temperature=prompt_config.get("temperature", 0.2),
+                top_p=prompt_config.get("top_p", 0.95),
                 system_instruction=system_instruction,
             ),
         )
+
+        # End loading animation
+        print("\rReport generated!      ")
 
         report_text = response.text
 
@@ -83,7 +94,7 @@ class VideoAnalyzer:
         Args:
             report_text (str): The report text to display
         """
-        display(Markdown(report_text))
+        print(report_text)
 
     def list_available_prompts(self):
         """
@@ -101,9 +112,9 @@ def main():
     video_url = "https://youtu.be/QdWnkH3TGDU"  # Example video URL
 
     # List available prompts
-    print("Available prompts:")
-    for prompt_type, description in analyzer.list_available_prompts().items():
-        print(f"- {prompt_type}: {description}")
+    # print("Available prompts:")
+    # for prompt_type, description in analyzer.list_available_prompts().items():
+    #     print(f"- {prompt_type}: {description}")
 
     # Generate report using simple prompt and save to file
     report = analyzer.generate_report(

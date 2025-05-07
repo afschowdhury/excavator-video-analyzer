@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import tomli  # for reading TOML files
-import tomli_w as tomli_writer  # for writing TOML files
+import tomli  
+import tomli_w as tomli_writer  
 
 
 @dataclass
@@ -56,7 +56,7 @@ class PromptManager:
 
         with open(
             template_path, "rb"
-        ) as f:  # TOML files should be opened in binary mode
+        ) as f:  
             return tomli.load(f)
 
     def _initialize_default_prompts(self):
@@ -150,10 +150,9 @@ class PromptManager:
             config=config,
         )
 
-        # Save to TOML file
+
         self.save_prompt_to_file(prompt_type, prompt)
 
-        # Add to prompts dictionary
         self.prompts[prompt_type] = prompt
 
     def save_prompt_to_file(self, prompt_type: str, prompt: PromptTemplate) -> Path:
