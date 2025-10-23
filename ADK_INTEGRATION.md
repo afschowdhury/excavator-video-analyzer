@@ -47,31 +47,72 @@ The system uses a multi-agent architecture with specialized agents coordinated b
    - Generates comprehensive reports
    - Manages workflow and error handling
 
-## POML (Prompt-Oriented Markup Language)
+## POML (Prompt Orchestration Markup Language)
 
-POML is a structured markup format used to ensure consistent, parseable outputs from AI models.
+POML is **Microsoft's HTML-like markup language for prompts**, providing a structured, semantic way to define AI prompts. It's similar to how HTML structures web content, but specifically designed for LLM prompt engineering.
 
-### Cycle Detection POML Format
+**Learn more**: 
+- [POML Blog Post](https://www.blog.brightcoding.dev/2025/08/20/poml-the-html-for-prompts-that-will-reshape-how-we-talk-to-ai/)
+- [Microsoft POML Documentation](https://microsoft.github.io/poml/)
+
+### Why POML?
+
+Traditional prompts are messy strings. POML brings:
+- **Semantic Tags**: `<role>`, `<task>`, `<example>`, `<document>`, `<stylesheet>`
+- **Separation of Concerns**: Content separate from styling (like HTML/CSS)
+- **Variable Interpolation**: `{{ variable }}` syntax
+- **Multi-modal Support**: `<img>`, `<table>`, `<document>` tags
+- **Version Control**: Plain text files that git can diff
+- **IDE Support**: Syntax highlighting, validation, live preview
+
+### POML File Structure
 
 ```xml
-<cycle id="1" start="00:15.2" end="00:47.8" total_duration="32.6s">
-  <dig start="00:15.2" end="00:25.1" duration="9.9s" description="Bucket descends and fills"/>
-  <swing_to_dump start="00:25.1" end="00:35.6" duration="10.5s" description="Swing to dump"/>
-  <dump start="00:35.6" end="00:40.2" duration="4.6s" description="Release material"/>
-  <return start="00:40.2" end="00:47.8" duration="7.6s" description="Return to dig"/>
-</cycle>
+<poml>
+  <role>You are an expert excavator analyst.</role>
+
+  <task>
+    Analyze the video for cycle {{ cycle_id }} in {{ location }}.
+  </task>
+
+  <document src="benchmarks.json" format="json" />
+
+  <example>
+    Input: Tokyo site, Cycle 1
+    Output: Cycle 1 completed in 38.5s...
+  </example>
+
+  <output-format>
+    Provide results as markdown table with timestamps.
+  </output-format>
+
+  <stylesheet>
+    temperature = 0.1
+    verbosity = detailed
+    format = markdown
+  </stylesheet>
+</poml>
 ```
 
-### Technique Evaluation POML Format
+### Key POML Tags Used
 
-```xml
-<evaluation>
-  <control_precision score="85/100">
-    <strength timestamp="00:25.3">Smooth coordinated movement</strength>
-    <improvement timestamp="00:42.1">Practice smoother control</improvement>
-  </control_precision>
-</evaluation>
-```
+| Tag | Purpose | Example |
+|-----|---------|---------|
+| `<role>` | Define AI persona/expertise | `<role>You are an expert...</role>` |
+| `<task>` | Main instruction | `<task>Analyze the video...</task>` |
+| `<output-format>` | Structure for response | `<output-format>Use markdown...</output-format>` |
+| `<example>` | Few-shot examples | `<example>Input: ... Output: ...</example>` |
+| `<stylesheet>` | Configuration (temp, format) | `<stylesheet>temperature = 0.1</stylesheet>` |
+| `<let>` | Variable declaration | `<let city = "Tokyo" />` |
+| `<if>` | Conditional content | `<if cycle_count>Show summary</if>` |
+
+### POML Templates in This Project
+
+Located in `prompt_templates/`:
+- **cycle_detection.poml** - Detects dig-dump cycles with timestamps
+- **technique_evaluation.poml** - Evaluates operator technique
+- **comprehensive_analysis.poml** - Full analysis with cycles + technique
+- **simple_analysis.poml** - Basic performance report
 
 ## Usage
 
@@ -137,27 +178,39 @@ Three new POML-based prompt templates have been added:
 2. **poml_technique_evaluation.toml** - Structured technique evaluation
 3. **cycle_time_analysis.toml** - Comprehensive cycle analysis with benchmarks
 
-### Adding Custom Templates
+### Adding Custom POML Templates
 
-Create a new TOML file in `prompt_templates/`:
+Create a new `.poml` file in `prompt_templates/`:
 
-```toml
-[metadata]
-name = "Custom Analysis"
-description = "Your custom analysis type"
-version = "1.0"
-author = "Your Name"
+```xml
+<poml>
+  <role>
+    Define the AI's role and expertise here.
+  </role>
 
-[template]
-content = """
-Your prompt template here...
-"""
+  <task>
+    Your main instruction for the AI.
+  </task>
 
-[config]
-temperature = 0.2
-top_p = 0.95
-max_tokens = 4000
+  <output-format>
+    Specify how you want the response structured.
+  </output-format>
+
+  <example>
+    Provide an example input/output pair.
+  </example>
+
+  <stylesheet>
+    temperature = 0.2
+    top_p = 0.95
+    max_tokens = 4000
+    format = markdown
+    verbosity = detailed
+  </stylesheet>
+</poml>
 ```
+
+The system automatically loads all `.poml` files from the `prompt_templates/` directory.
 
 ## Cycle Time Analysis
 

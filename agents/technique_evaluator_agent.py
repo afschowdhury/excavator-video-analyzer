@@ -48,8 +48,8 @@ class TechniqueEvaluatorAgent(BaseAgent):
 
         # Get POML technique evaluation prompt
         try:
-            system_instruction = self.prompt_manager.get_prompt("poml_technique_evaluation")
-            prompt_config = self.prompt_manager.get_prompt_config("poml_technique_evaluation")
+            system_instruction = self.prompt_manager.get_prompt("technique_evaluation")
+            prompt_config = self.prompt_manager.get_prompt_config("technique_evaluation")
         except KeyError:
             self.log("POML technique evaluation template not found, using detailed", "warning")
             system_instruction = self.prompt_manager.get_prompt("detailed")

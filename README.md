@@ -16,7 +16,7 @@ The Excavator Video Analyzer is an advanced Python tool that generates detailed 
 - **Automated Video Analysis:** Generate performance reports from YouTube or video URLs
 - **Multi-Agent Architecture:** Specialized agents for cycle detection and technique evaluation
 - **Cycle Time Detection:** Identifies ALL dig-dump cycles with precise timestamps
-- **POML Structured Output:** Parseable, structured markup language for consistent results
+- **POML Integration:** Uses Microsoft's [Prompt Orchestration Markup Language](https://microsoft.github.io/poml/) for structured, maintainable prompts
 - **Benchmark Comparisons:** Compares performance against industry standards
 
 ### Analysis Capabilities
@@ -132,11 +132,17 @@ print(f"Overall score: {results['overall_score']['score']}")
 
 Located in the `prompt_templates/` directory:
 
-- **simple.toml** - Basic performance analysis
-- **detailed.toml** - Comprehensive analysis with cycle time focus
-- **poml_cycle_detection.toml** - POML-structured cycle detection
-- **poml_technique_evaluation.toml** - POML-structured technique evaluation
-- **cycle_time_analysis.toml** - Cycle analysis with benchmark comparisons
+**POML Templates (New Format):**
+- **cycle_detection.poml** - Cycle detection with precise timestamps
+- **technique_evaluation.poml** - Operator technique evaluation
+- **comprehensive_analysis.poml** - Full analysis (cycles + technique)
+- **simple_analysis.poml** - Basic performance report
+
+**TOML Templates (Legacy Format):**
+- **simple.toml** - Basic analysis (legacy)
+- **detailed.toml** - Detailed analysis with cycle focus (legacy)
+
+**What is POML?** [Prompt Orchestration Markup Language](https://microsoft.github.io/poml/) is Microsoft's HTML-like markup for AI prompts, providing structured, maintainable, and version-control-friendly prompt definitions.
 
 ### ADK Configuration
 

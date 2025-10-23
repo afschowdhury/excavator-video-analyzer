@@ -3,10 +3,10 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from xml.etree import ElementTree as ET
 
 import tomli  
-import tomli_w as tomli_writer
-from lxml import etree  
+import tomli_w as tomli_writer  
 
 
 @dataclass
@@ -61,12 +61,125 @@ class PromptManager:
         ) as f:  
             return tomli.load(f)
 
-    def _initialize_default_prompts(self):
-        """Initialize default prompt templates from TOML files"""
-        # Find all .toml files in the templates directory
-        template_files = list(self.templates_dir.glob("*.toml"))
+    def _load_poml_template(self, template_path: Path) -> Dict[str, Any]:
+        """
+        Load and parse a POML template file
 
-        for template_file in template_files:
+        Args:
+            template_path (Path): Path to the POML file
+
+        Returns:
+            Dict[str, Any]: Parsed POML data including template and config
+
+        Raises:
+            FileNotFoundError: If the template file doesn't exist
+        """
+        if not template_path.exists():
+            raise FileNotFoundError(f"POML template file not found: {template_path}")
+
+        with open(template_path, 'r', encoding='utf-8') as f:
+            poml_content = f.read()
+
+        # Parse the POML XML structure
+        try:
+            root = ET.fromstring(poml_content)
+        except ET.ParseError as e:
+            raise ValueError(f"Invalid POML syntax in {template_path.name}: {e}")
+
+        # Extract components
+        role = self._get_poml_text(root, 'role', '')
+        task = self._get_poml_text(root, 'task', '')
+        output_format = self._get_poml_text(root, 'output-format', '')
+        
+        # Extract examples
+        examples = []
+        for example in root.findall('example'):
+            examples.append(example.text.strip() if example.text else '')
+
+        # Extract stylesheet configuration
+        config = {}
+        stylesheet = root.find('stylesheet')
+        if stylesheet is not None:
+            if stylesheet.text:
+                # Parse stylesheet properties
+                for line in stylesheet.text.strip().split('\n'):
+                    line = line.strip()
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        # Convert to appropriate type
+                        if value.replace('.', '').isdigit():
+                            config[key] = float(value) if '.' in value else int(value)
+                        else:
+                            config[key] = value
+
+        # Build the complete prompt template
+        template_parts = []
+        
+        if role:
+            template_parts.append(f"Role: {role}")
+        
+        if task:
+            template_parts.append(f"\nTask: {task}")
+        
+        if examples:
+            template_parts.append("\n\nExamples:")
+            for i, example in enumerate(examples, 1):
+                template_parts.append(f"\nExample {i}:\n{example}")
+        
+        if output_format:
+            template_parts.append(f"\n\nOutput Format:\n{output_format}")
+
+        template = '\n'.join(template_parts)
+
+        # Extract metadata
+        name = template_path.stem.replace('_', ' ').title()
+        description = f"POML-based {name} template"
+
+        return {
+            'name': name,
+            'description': description,
+            'template': template,
+            'config': config,
+            'version': '2.0',  # POML version
+            'author': 'Excavator Analysis System (POML)'
+        }
+
+    def _get_poml_text(self, root: ET.Element, tag: str, default: str = '') -> str:
+        """
+        Extract text content from a POML tag
+
+        Args:
+            root: Root element
+            tag: Tag name to find
+            default: Default value if tag not found
+
+        Returns:
+            str: Text content of the tag
+        """
+        element = root.find(tag)
+        if element is not None:
+            # Get all text including nested elements
+            text_parts = []
+            if element.text:
+                text_parts.append(element.text.strip())
+            for child in element:
+                if child.text:
+                    text_parts.append(child.text.strip())
+                if child.tail:
+                    text_parts.append(child.tail.strip())
+            return '\n'.join(text_parts) if text_parts else default
+        return default
+
+    def _initialize_default_prompts(self):
+        """Initialize default prompt templates from both TOML and POML files"""
+        # Find all .toml and .poml files in the templates directory
+        toml_files = list(self.templates_dir.glob("*.toml"))
+        poml_files = list(self.templates_dir.glob("*.poml"))
+
+        # Load TOML templates (legacy format)
+        for template_file in toml_files:
             try:
                 template_name = template_file.stem
                 template_data = self._load_template_from_file(template_name)
@@ -82,7 +195,24 @@ class PromptManager:
                     config=template_data.get("config", {}),
                 )
             except Exception as e:
-                print(f"Warning: Failed to load template {template_file.name}: {e}")
+                print(f"Warning: Failed to load TOML template {template_file.name}: {e}")
+
+        # Load POML templates (new format)
+        for template_file in poml_files:
+            try:
+                template_name = template_file.stem
+                poml_data = self._load_poml_template(template_file)
+
+                self.prompts[template_name] = PromptTemplate(
+                    name=poml_data["name"],
+                    description=poml_data["description"],
+                    template=poml_data["template"],
+                    version=poml_data.get("version", "1.0"),
+                    author=poml_data.get("author", "Excavator Analysis System"),
+                    config=poml_data.get("config", {}),
+                )
+            except Exception as e:
+                print(f"Warning: Failed to load POML template {template_file.name}: {e}")
 
     def get_prompt(self, prompt_type: str) -> str:
         """

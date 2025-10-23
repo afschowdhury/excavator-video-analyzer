@@ -44,27 +44,47 @@ Total optimal cycle time: 35-45 seconds
 
 ### 3. POML Integration (Preference 3c)
 
-Implemented POML for both structured prompts and agent instruction sets:
+Implemented **Microsoft's POML (Prompt Orchestration Markup Language)** for structured, maintainable prompts:
+
+**What is POML?**
+- Microsoft Research's HTML-like markup language for AI prompts
+- Semantic tags: `<role>`, `<task>`, `<example>`, `<output-format>`, `<stylesheet>`
+- Variable interpolation: `{{ variable }}` syntax
+- Separation of concerns (content vs. styling)
+- Version control friendly
+- Reference: [POML Blog](https://www.blog.brightcoding.dev/2025/08/20/poml-the-html-for-prompts-that-will-reshape-how-we-talk-to-ai/), [Microsoft POML Docs](https://microsoft.github.io/poml/)
 
 **POML Prompt Templates Created:**
-- `poml_cycle_detection.toml` - Structured cycle detection markup
-- `poml_technique_evaluation.toml` - Structured technique evaluation markup
-- `cycle_time_analysis.toml` - Comprehensive cycle analysis with benchmarks
+- `cycle_detection.poml` - Cycle detection with structured POML
+- `technique_evaluation.poml` - Technique evaluation with POML
+- `comprehensive_analysis.poml` - Full analysis template
+- `simple_analysis.poml` - Basic analysis template
 
-**POML Parser Class:**
-- `POMLParser` in `prompts.py`
-- Methods: `parse_cycles()`, `parse_summary()`, `parse_evaluation()`, `extract_plain_text()`
-- Robust regex-based parsing of XML-style POML markup
-- Handles nested structures and attributes
+**POML Parser in PromptManager:**
+- `_load_poml_template()` - Parses POML XML structure
+- Extracts `<role>`, `<task>`, `<output-format>`, `<example>` tags
+- Parses `<stylesheet>` for configuration (temperature, format, verbosity)
+- Supports both POML (.poml) and legacy TOML (.toml) formats
+- Automatic discovery and loading from `prompt_templates/`
 
-**Example POML Output:**
+**Example POML File:**
 ```xml
-<cycle id="1" start="00:15.2" end="00:47.8" total_duration="32.6s">
-  <dig start="00:15.2" end="00:25.1" duration="9.9s" description="Bucket descends"/>
-  <swing_to_dump start="00:25.1" end="00:35.6" duration="10.5s" description="Swing to dump"/>
-  <dump start="00:35.6" end="00:40.2" duration="4.6s" description="Release material"/>
-  <return start="00:40.2" end="00:47.8" duration="7.6s" description="Return to dig"/>
-</cycle>
+<poml>
+  <role>You are an expert excavator analyst.</role>
+  
+  <task>
+    Analyze the video for {{ cycle_count }} cycles.
+  </task>
+  
+  <output-format>
+    Provide markdown table with timestamps.
+  </output-format>
+  
+  <stylesheet>
+    temperature = 0.1
+    format = markdown
+  </stylesheet>
+</poml>
 ```
 
 ### 4. Complete Video Analysis (Preference 4a)
@@ -105,9 +125,12 @@ example_usage.py               # Usage examples
 ### Prompt Templates
 ```
 prompt_templates/
-├── poml_cycle_detection.toml
-├── poml_technique_evaluation.toml
-└── cycle_time_analysis.toml
+├── cycle_detection.poml            # POML format
+├── technique_evaluation.poml       # POML format
+├── comprehensive_analysis.poml     # POML format
+├── simple_analysis.poml            # POML format
+├── simple.toml                     # Legacy TOML format
+└── detailed.toml                   # Legacy TOML format
 ```
 
 ### Tests

@@ -42,12 +42,12 @@ class CycleDetectorAgent(BaseAgent):
 
         # Get POML cycle detection prompt
         try:
-            system_instruction = self.prompt_manager.get_prompt("poml_cycle_detection")
-            prompt_config = self.prompt_manager.get_prompt_config("poml_cycle_detection")
+            system_instruction = self.prompt_manager.get_prompt("cycle_detection")
+            prompt_config = self.prompt_manager.get_prompt_config("cycle_detection")
         except KeyError:
-            self.log("POML cycle detection template not found, using cycle_time_analysis", "warning")
-            system_instruction = self.prompt_manager.get_prompt("cycle_time_analysis")
-            prompt_config = self.prompt_manager.get_prompt_config("cycle_time_analysis")
+            self.log("POML cycle detection template not found, using comprehensive_analysis", "warning")
+            system_instruction = self.prompt_manager.get_prompt("comprehensive_analysis")
+            prompt_config = self.prompt_manager.get_prompt_config("comprehensive_analysis")
 
         # Prepare content parts
         content_parts = [
