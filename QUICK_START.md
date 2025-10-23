@@ -146,16 +146,27 @@ excavator-video-analyzer/
 │   └── orchestrator_agent.py
 ├── config/
 │   └── adk_config.py         # Agent configuration
-├── prompt_templates/          # POML templates
-│   ├── poml_cycle_detection.toml
-│   ├── poml_technique_evaluation.toml
-│   └── cycle_time_analysis.toml
+├── prompt_templates/          # POML & TOML templates
+│   ├── cycle_detection.poml          # POML format
+│   ├── technique_evaluation.poml     # POML format
+│   ├── comprehensive_analysis.poml   # POML format
+│   ├── simple_analysis.poml          # POML format
+│   ├── simple.toml                   # Legacy TOML
+│   └── detailed.toml                 # Legacy TOML
 ├── tests/                     # Test suite
 ├── video_analyzer.py          # Main analyzer
 ├── cycle_time_report.py       # Report generator
 ├── example_usage.py           # Usage examples
 └── reports/                   # Generated reports
 ```
+
+### What is POML?
+
+**POML (Prompt Orchestration Markup Language)** is Microsoft's HTML-like markup for AI prompts:
+- Semantic tags: `<role>`, `<task>`, `<output-format>`, `<stylesheet>`
+- Clean separation of content and configuration
+- Version control friendly (plain text XML)
+- Learn more: [POML Blog Post](https://www.blog.brightcoding.dev/2025/08/20/poml-the-html-for-prompts-that-will-reshape-how-we-talk-to-ai/)
 
 ## Benchmarks
 
