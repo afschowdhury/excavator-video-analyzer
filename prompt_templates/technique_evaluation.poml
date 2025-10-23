@@ -9,22 +9,21 @@
   <task>
     Analyze the operator's technique throughout the video, providing detailed evaluation with specific timestamps.
     
-    <if cycle_count>
-      Context: The video contains {{ cycle_count }} complete cycles with an average cycle time of {{ avg_cycle_time }} seconds.
-    </if>
+    If cycle_count is provided:
+    Context: The video contains {{ cycle_count }} complete cycles with an average cycle time of {{ avg_cycle_time }} seconds.
   </task>
 
   <output-format>
     # Technique Evaluation Report
     
-    ## Control & Precision (Score: X/100)
+    ## Control &amp; Precision (Score: X/100)
     **Strengths:**
     - [Timestamp] Specific observation
     
     **Areas for Improvement:**
     - [Timestamp] Specific issue and recommendation
     
-    ## Efficiency & Workflow (Score: X/100)
+    ## Efficiency &amp; Workflow (Score: X/100)
     **Strengths:**
     - [Timestamp] Specific observation
     
@@ -65,7 +64,7 @@
   </output-format>
 
   <example>
-    ## Control & Precision (Score: 85/100)
+    ## Control &amp; Precision (Score: 85/100)
     **Strengths:**
     - [00:25.3] Smooth coordinated movement during swing phase with excellent bucket control
     

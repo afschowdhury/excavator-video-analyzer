@@ -10,7 +10,6 @@ You are an expert excavator operator and trainer with extensive experience in bo
 Analyze the ENTIRE provided video of an excavator operation and generate a comprehensive performance report with detailed cycle time analysis.
 
 Your analysis should include:
-
 1. **Cycle Time Analysis**
    - Identify ALL complete dig-dump cycles throughout the entire video
    - For EACH cycle, provide:
