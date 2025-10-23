@@ -6,6 +6,9 @@ from google.genai import types
 from rich.console import Console
 from rich.markdown import Markdown
 
+from agents.orchestrator_agent import OrchestratorAgent
+from config.adk_config import ADKConfig
+from cycle_time_report import CycleTimeReport
 from prompts import PromptManager
 from report_saver import ReportSaver
 
@@ -103,6 +106,88 @@ class VideoAnalyzer:
         """
         return self.prompt_manager.list_prompts()
 
+    def analyze_with_agents(
+        self,
+        video_url: str,
+        include_cycle_times: bool = True,
+        include_technique_analysis: bool = True,
+        save_to_file: bool = True,
+        filename: str = None,
+        config: ADKConfig = None
+    ):
+        """
+        Analyze video using multi-agent ADK system
+
+        Args:
+            video_url (str): URL of the video to analyze
+            include_cycle_times (bool): Whether to detect cycle times
+            include_technique_analysis (bool): Whether to evaluate technique
+            save_to_file (bool): Whether to save the report
+            filename (str, optional): Custom filename for the report
+            config (ADKConfig, optional): Custom ADK configuration
+
+        Returns:
+            str: Generated comprehensive report
+        """
+        with self.console.status("[bold green]Initializing multi-agent analysis...") as status:
+            try:
+                # Initialize configuration
+                if config is None:
+                    config = ADKConfig()
+
+                # Initialize orchestrator with agents
+                orchestrator = OrchestratorAgent(
+                    api_key=self.api_key,
+                    model=config.default_model
+                )
+
+                # Run orchestrated analysis
+                status.update("[bold green]Running multi-agent analysis...")
+                results = orchestrator.process(
+                    video_url=video_url,
+                    include_cycle_times=include_cycle_times,
+                    include_technique_analysis=include_technique_analysis
+                )
+
+                # Generate formatted report
+                status.update("[bold green]Generating comprehensive report...")
+                report_text = orchestrator.get_formatted_report()
+
+                # Optionally generate detailed cycle time report
+                if include_cycle_times and results.get('cycles'):
+                    status.update("[bold green]Generating cycle time analysis...")
+                    cycle_reporter = CycleTimeReport()
+                    
+                    cycles_data = results['cycles']
+                    if 'cycles' in cycles_data and 'summary' in cycles_data:
+                        cycle_report = cycle_reporter.generate_markdown_report(
+                            cycles=cycles_data['cycles'],
+                            summary=cycles_data.get('summary', {}),
+                            metadata={'video_url': video_url}
+                        )
+                        
+                        # Append cycle report to main report
+                        report_text += "\n\n---\n\n" + cycle_report
+
+                # Save report if requested
+                if save_to_file:
+                    if filename:
+                        self.report_saver.save_report(report_text, filename)
+                    else:
+                        # Generate filename with timestamp
+                        from datetime import datetime
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        self.report_saver.save_report(
+                            report_text,
+                            f"adk_analysis_{timestamp}"
+                        )
+
+                return report_text
+
+            except Exception as e:
+                self.console.print(f"[bold red]Error in multi-agent analysis: {e}")
+                return None
+
 
 def main():
     """Main entry point for the video analyzer"""
@@ -110,12 +195,19 @@ def main():
         analyzer = VideoAnalyzer()
         video_url = "https://youtu.be/QdWnkH3TGDU"
 
-        # Just call generate_report, don't wrap it in another status spinner
+        console = Console()
+        console.print("\n[bold cyan]═══════════════════════════════════════════════════════")
+        console.print("[bold cyan]  Excavator Video Analyzer with ADK Multi-Agent System")
+        console.print("[bold cyan]═══════════════════════════════════════════════════════\n")
+
+        # Option 1: Traditional single-model approach
+        console.print("[bold yellow]Option 1: Traditional Analysis (Simple)")
         report = analyzer.generate_report(
             video_url, prompt_type="simple", save_to_file=True
         )
         analyzer.display_report(report)
 
+        console.print("\n[bold yellow]Option 2: Traditional Analysis (Detailed)")
         improved_report = analyzer.generate_report(
             video_url,
             prompt_type="detailed",
@@ -123,6 +215,25 @@ def main():
             filename="detailed_analysis",
         )
         analyzer.display_report(improved_report)
+
+        # Option 2: NEW Multi-agent ADK approach with cycle time analysis
+        console.print("\n[bold green]═══════════════════════════════════════════════════════")
+        console.print("[bold green]  Option 3: Multi-Agent ADK Analysis (RECOMMENDED)")
+        console.print("[bold green]═══════════════════════════════════════════════════════\n")
+        
+        adk_report = analyzer.analyze_with_agents(
+            video_url=video_url,
+            include_cycle_times=True,
+            include_technique_analysis=True,
+            save_to_file=True,
+            filename="adk_multi_agent_analysis"
+        )
+        
+        if adk_report:
+            analyzer.display_report(adk_report)
+        
+        console.print("\n[bold green]✓ All analyses complete!")
+        console.print("[bold cyan]Check the 'reports/' directory for saved reports.\n")
 
     except Exception as e:
         console = Console()

@@ -1,0 +1,68 @@
+[metadata]
+name = "POML Cycle Detection"
+description = "Structured prompt for detecting excavator dig-dump cycles with precise timestamps"
+version = "1.0"
+author = "Excavator Analysis System"
+
+[template]
+content = """
+You are an expert excavator cycle time analyst with extensive experience in analyzing excavator operations and measuring productivity metrics.
+
+Your task is to analyze the ENTIRE video systematically and identify ALL complete dig-dump cycles from start to finish.
+
+## Cycle Definition
+A complete dig-dump cycle consists of four distinct phases:
+1. **Dig Phase**: Excavator bucket descends, penetrates material, and fills with load
+2. **Swing to Dump**: Loaded excavator swings from dig location to dump location
+3. **Dump Phase**: Bucket opens and releases material at dump location
+4. **Return Swing**: Empty excavator swings back to dig location to start next cycle
+
+## Analysis Requirements
+- Watch the ENTIRE video from start to finish
+- Identify EVERY complete cycle (all 4 phases present)
+- Provide PRECISE timestamps in MM:SS.ms format for each phase
+- Number each cycle sequentially (Cycle 1, Cycle 2, etc.)
+- Calculate duration for each phase and total cycle time
+
+## Output Format
+For each cycle detected, structure your response using POML (Prompt-Oriented Markup Language) markers:
+
+<cycle id="1" start="00:15.2" end="00:47.8" total_duration="32.6s">
+  <dig start="00:15.2" end="00:25.1" duration="9.9s" description="Bucket descends and fills with material"/>
+  <swing_to_dump start="00:25.1" end="00:35.6" duration="10.5s" description="Swings loaded bucket to dump location"/>
+  <dump start="00:35.6" end="00:40.2" duration="4.6s" description="Releases material at dump point"/>
+  <return start="00:40.2" end="00:47.8" duration="7.6s" description="Returns empty to dig position"/>
+</cycle>
+
+<cycle id="2" start="00:48.0" end="01:19.5" total_duration="31.5s">
+  <dig start="00:48.0" end="00:57.2" duration="9.2s" description="Second dig operation"/>
+  <swing_to_dump start="00:57.2" end="01:07.8" duration="10.6s" description="Swing to dump"/>
+  <dump start="01:07.8" end="01:12.1" duration="4.3s" description="Dump material"/>
+  <return start="01:12.1" end="01:19.5" duration="7.4s" description="Return swing"/>
+</cycle>
+
+Continue this pattern for ALL cycles in the video.
+
+## Summary Section
+After listing all cycles, provide a summary:
+
+<summary>
+  <total_cycles>X</total_cycles>
+  <video_duration>MM:SS</video_duration>
+  <average_cycle_time>XX.Xs</average_cycle_time>
+  <fastest_cycle id="X" time="XX.Xs"/>
+  <slowest_cycle id="X" time="XX.Xs"/>
+</summary>
+
+## Important Notes
+- Be thorough - analyze the complete video, not just a portion
+- Timestamps must be accurate to the nearest 0.1 second
+- If a cycle is incomplete (missing phases), note it separately
+- Focus on precision and completeness
+"""
+
+[config]
+temperature = 0.1
+top_p = 0.9
+max_tokens = 8000
+

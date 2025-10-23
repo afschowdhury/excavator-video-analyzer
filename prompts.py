@@ -1,10 +1,12 @@
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import tomli  
-import tomli_w as tomli_writer  
+import tomli_w as tomli_writer
+from lxml import etree  
 
 
 @dataclass
@@ -205,3 +207,168 @@ class PromptManager:
             Optional[PromptTemplate]: Prompt template information or None if not found
         """
         return self.prompts.get(prompt_type)
+
+
+class POMLParser:
+    """Parser for POML (Prompt-Oriented Markup Language) structured outputs"""
+
+    @staticmethod
+    def parse_cycles(poml_text: str) -> List[Dict[str, Any]]:
+        """
+        Parse POML cycle markup from AI response
+
+        Args:
+            poml_text (str): Text containing POML cycle markup
+
+        Returns:
+            List[Dict[str, Any]]: List of parsed cycle dictionaries
+        """
+        cycles = []
+        
+        # Extract cycle blocks using regex
+        cycle_pattern = r'<cycle\s+id="(\d+)"\s+start="([^"]+)"\s+end="([^"]+)"(?:\s+total_duration="([^"]+)")?>(.*?)</cycle>'
+        cycle_matches = re.finditer(cycle_pattern, poml_text, re.DOTALL)
+        
+        for match in cycle_matches:
+            cycle_id = int(match.group(1))
+            start = match.group(2)
+            end = match.group(3)
+            total_duration = match.group(4) or "0s"
+            content = match.group(5)
+            
+            # Parse phases within cycle
+            phases = {}
+            phase_pattern = r'<(\w+)\s+start="([^"]+)"\s+end="([^"]+)"\s+duration="([^"]+)"(?:\s+description="([^"]+)")?\s*/>'
+            phase_matches = re.finditer(phase_pattern, content)
+            
+            for phase_match in phase_matches:
+                phase_name = phase_match.group(1)
+                phases[phase_name] = {
+                    'start': phase_match.group(2),
+                    'end': phase_match.group(3),
+                    'duration': phase_match.group(4),
+                    'description': phase_match.group(5) or ''
+                }
+            
+            cycles.append({
+                'id': cycle_id,
+                'start': start,
+                'end': end,
+                'total_duration': total_duration,
+                'phases': phases
+            })
+        
+        return cycles
+
+    @staticmethod
+    def parse_summary(poml_text: str) -> Dict[str, Any]:
+        """
+        Parse POML summary section
+
+        Args:
+            poml_text (str): Text containing POML summary markup
+
+        Returns:
+            Dict[str, Any]: Parsed summary data
+        """
+        summary = {}
+        
+        # Extract summary block
+        summary_pattern = r'<summary>(.*?)</summary>'
+        summary_match = re.search(summary_pattern, poml_text, re.DOTALL)
+        
+        if summary_match:
+            summary_content = summary_match.group(1)
+            
+            # Parse individual summary fields
+            field_pattern = r'<(\w+)(?:\s+id="([^"]+)")?(?:\s+time="([^"]+)")?>([^<]*)</\1>'
+            field_matches = re.finditer(field_pattern, summary_content)
+            
+            for field_match in field_matches:
+                field_name = field_match.group(1)
+                field_value = field_match.group(4).strip()
+                
+                # Handle fields with attributes (like fastest_cycle)
+                if field_match.group(2) or field_match.group(3):
+                    summary[field_name] = {
+                        'value': field_value,
+                        'id': field_match.group(2),
+                        'time': field_match.group(3)
+                    }
+                else:
+                    summary[field_name] = field_value
+        
+        return summary
+
+    @staticmethod
+    def parse_evaluation(poml_text: str) -> Dict[str, Any]:
+        """
+        Parse POML evaluation markup
+
+        Args:
+            poml_text (str): Text containing POML evaluation markup
+
+        Returns:
+            Dict[str, Any]: Parsed evaluation data
+        """
+        evaluation = {}
+        
+        # Extract evaluation block
+        eval_pattern = r'<evaluation>(.*?)</evaluation>'
+        eval_match = re.search(eval_pattern, poml_text, re.DOTALL)
+        
+        if eval_match:
+            eval_content = eval_match.group(1)
+            
+            # Parse evaluation categories
+            category_pattern = r'<(\w+)\s+score="([^"]+)">(.*?)</\1>'
+            category_matches = re.finditer(category_pattern, eval_content, re.DOTALL)
+            
+            for cat_match in category_matches:
+                category_name = cat_match.group(1)
+                score = cat_match.group(2)
+                category_content = cat_match.group(3)
+                
+                # Parse strengths and improvements
+                strengths = []
+                improvements = []
+                
+                strength_pattern = r'<strength timestamp="([^"]+)">([^<]+)</strength>'
+                improvement_pattern = r'<improvement timestamp="([^"]+)">([^<]+)</improvement>'
+                
+                for strength_match in re.finditer(strength_pattern, category_content):
+                    strengths.append({
+                        'timestamp': strength_match.group(1),
+                        'description': strength_match.group(2)
+                    })
+                
+                for improvement_match in re.finditer(improvement_pattern, category_content):
+                    improvements.append({
+                        'timestamp': improvement_match.group(1),
+                        'description': improvement_match.group(2)
+                    })
+                
+                evaluation[category_name] = {
+                    'score': score,
+                    'strengths': strengths,
+                    'improvements': improvements
+                }
+        
+        return evaluation
+
+    @staticmethod
+    def extract_plain_text(poml_text: str) -> str:
+        """
+        Extract plain text content, removing POML markup
+
+        Args:
+            poml_text (str): Text with POML markup
+
+        Returns:
+            str: Plain text without markup
+        """
+        # Remove XML-style tags but preserve content
+        text = re.sub(r'<[^>]+>', '', poml_text)
+        # Clean up extra whitespace
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        return text.strip()
