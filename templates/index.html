@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excavator Video Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚜 Excavator Video Analyzer</h1>
+            <p>Analyze excavator performance using AI-powered insights</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel -->
+            <div class="left-panel">
+                <div class="card">
+                    <h2>Analysis Configuration</h2>
+                    
+                    <!-- Prompt Selection -->
+                    <div class="form-group">
+                        <label for="prompt-select">Analysis Type</label>
+                        <select id="prompt-select" class="form-control">
+                            <option value="">Select a prompt template...</option>
+                        </select>
+                        <p id="prompt-description" class="description"></p>
+                    </div>
+
+                    <!-- Video URL Input -->
+                    <div class="form-group">
+                        <label for="video-url">YouTube Video URL</label>
+                        <input 
+                            type="text" 
+                            id="video-url" 
+                            class="form-control" 
+                            placeholder="https://youtu.be/..."
+                        >
+                    </div>
+
+                    <!-- Preset Videos -->
+                    <div class="form-group">
+                        <label>Preset Videos</label>
+                        <div class="preset-grid" id="preset-grid">
+                            {% for video in preset_videos %}
+                            <div class="preset-item" data-url="{{ video.url }}" data-video-id="{{ video.video_id }}">
+                                <img src="{{ video.thumbnail }}" alt="{{ video.title }}">
+                                <span class="preset-title">{{ video.title }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Video Embed -->
+                    <div class="form-group">
+                        <label>Video Preview</label>
+                        <div class="video-container">
+                            <div id="video-placeholder" class="video-placeholder">
+                                <p>Enter a YouTube URL or select a preset to preview</p>
+                            </div>
+                            <iframe 
+                                id="video-embed" 
+                                class="video-embed hidden"
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+
+                    <!-- Analyze Button -->
+                    <button id="analyze-btn" class="btn btn-primary" disabled>
+                        <span class="btn-text">Analyze Video</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <div class="card output-card">
+                    <h2>Analysis Results</h2>
+                    <div id="output-container" class="output-container">
+                        <div class="output-placeholder">
+                            <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p>Select a prompt and video, then click "Analyze" to generate a report</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+

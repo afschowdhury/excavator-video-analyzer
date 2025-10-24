@@ -33,6 +33,25 @@ The Excavator Video Analyzer is a Python tool that generates detailed performanc
 
 ## Usage
 
+### Web UI (Recommended)
+
+Run the Flask web application for an interactive, visual experience:
+
+```bash
+python app.py
+```
+
+Then open your browser and navigate to `http://localhost:5000`
+
+**Features:**
+- Select from available prompt templates via dropdown
+- Input custom YouTube URLs or choose from preset videos
+- Embedded video preview
+- Real-time analysis with loading indicators
+- Beautifully formatted markdown output
+
+### Command Line Interface
+
 Run the analyzer script from your terminal:
 
 ```bash

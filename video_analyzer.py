@@ -1,5 +1,6 @@
 import os
 
+from icecream import ic
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -8,6 +9,9 @@ from rich.markdown import Markdown
 
 from prompts import PromptManager
 from report_saver import ReportSaver
+
+ic.configureOutput(includeContext=True, prefix="- DEBUG -")
+
 
 
 class VideoAnalyzer:
@@ -34,7 +38,7 @@ class VideoAnalyzer:
     def generate_report(
         self,
         video_url,
-        model="gemini-2.5-pro-exp-03-25",
+        model="gemini-2.5-pro",
         prompt_type="simple",
         save_to_file=True,
         filename=None,
@@ -53,7 +57,9 @@ class VideoAnalyzer:
             str: Generated report in markdown format
         """
         system_instruction = self.prompt_manager.get_prompt(prompt_type)
+        ic(system_instruction)
         prompt_config = self.prompt_manager.get_prompt_config(prompt_type)
+        ic(prompt_config)
 
         with self.console.status("[bold green]Generating report...") as status:
             try:
@@ -61,16 +67,18 @@ class VideoAnalyzer:
                     model=model,
                     contents=types.Content(
                         parts=[
-                            types.Part(file_data=types.FileData(file_uri=video_url)),
-                            types.Part(text="Please generate report from this video"),
+                            types.Part(
+                                file_data=types.FileData(file_uri=video_url),
+                                video_metadata=types.VideoMetadata(fps=3)),
+                            types.Part(text="Please extract the excavation cycle timestamps rom the video"),
                         ]
                     ),
                     config=types.GenerateContentConfig(
                         temperature=prompt_config.get("temperature", 0.2),
-                        top_p=prompt_config.get("top_p", 0.95),
                         system_instruction=system_instruction,
                     ),
                 )
+                ic(response)
 
                 report_text = response.text
 

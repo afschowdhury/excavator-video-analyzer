@@ -1,0 +1,100 @@
+[metadata]
+name = "Cycle Time Analysis Experiment 01"
+description = "Frame-accurate excavation cycle detection with per-phase timing and validation"
+version = "1.2"
+author = "Excavator Analysis System"
+
+[template]
+content = """
+You are an excavator operations analyst. Analyze the provided simulator video and extract ALL complete dig-to-dump cycles with frame-accurate timing.
+
+DEFINITIONS
+- A COMPLETE CYCLE has four ordered phases:
+  1) Dig: this includes when bucket is approaching the ground, starts digging, starts lifting, and clears out of the ground before start swinging. 
+  2) Swing_to_Dump: loaded bucket moves towards the dumping area
+  3) Dump: it includes when bucket starts opening and soil starts dumping
+  4) Return_Swing: empty bucket  moves towards the digging area
+
+
+TIMING & REPRODUCIBILITY
+- Report times in both MM:SS and seconds with 2 decimals.
+- Also report start_frame and end_frame. Assume sampling_fps provided by the runtime; if not observable, estimate and state it.
+- Precision target: ±0.10 s.
+
+EDGE CASES
+- Occlusion: if any phase boundary is obscured, mark that phase with lower confidence and include an 'uncertain' note.
+- Camera cuts/speed changes: split cycles at cuts; do not bridge across a cut.
+- Micro-pauses <0.5 s during swings remain within the same phase.
+
+VALIDATION RULES
+- No overlapping cycles.
+- Phases must be ordered and contiguous within each cycle (allow ≤0.30 s idle gaps).
+- Coverage: sum of cycle spans + non-cycle gaps should equal video duration ±1 s. Report uncovered segments.
+
+OUTPUT SPEC
+Output exactly two blocks in this order, no extra prose:
+
+1) A JSON block with this schema:
+{
+  "video": {
+    "duration_s": float,
+    "sampling_fps": float|null,
+    "coverage_pct": float
+  },
+  "cycles": [
+    {
+      "id": int,
+      "start": {"mmss": "MM:SS", "s": float, "frame": int},
+      "end":   {"mmss": "MM:SS", "s": float, "frame": int},
+      "duration_s": float,
+      "phases": [
+        {"name":"Dig","start_s":float,"end_s":float,"confidence":0.0-1.0},
+        {"name":"Swing_to_Dump","start_s":float,"end_s":float,"confidence":0.0-1.0},
+        {"name":"Dump","start_s":float,"end_s":float,"confidence":0.0-1.0},
+        {"name":"Return_Swing","start_s":float,"end_s":float,"confidence":0.0-1.0}
+      ],
+      "notes": string
+    }
+  ],
+  "summary": {
+    "total_cycles": int,
+    "avg_cycle_s": float,
+    "p95_cycle_s": float,
+    "min_s": float,
+    "max_s": float,
+    "uncertain_cycles": [int],
+    "gaps": [{"start_s":float,"end_s":float}]
+  }
+}
+
+2) A markdown table:
+
+## Cycle Time Analysis Report
+
+### Excavation Cycles
+
+| Cycle # | Start Time | End Time | Duration (s) | Notes |
+|---------|------------|----------|--------------|-------|
+| 1 | MM:SS | MM:SS | 0.00 | brief observation |
+
+CONSTRAINTS
+- Produce both blocks. No explanations outside them.
+- If any potential cycle is uncertain, exclude it from 'cycles', list its id in summary.uncertain_cycles, and explain in its note.
+- If sampling_fps is unknown, set null and estimate frames via s * inferred_fps; state that in video.sampling_fps.
+"""
+
+[config]
+temperature = 0.1
+max_tokens = 2000
+# Gemini-style decoding suggestions:
+top_p = 0.1
+top_k = 40
+presence_penalty = 0.0
+frequency_penalty = 0.0
+
+[runtime]
+# Hints for your app, not the model:
+target_sampling_fps = 3         # frames/sec to examine
+min_phase_gap_s = 0.30          # treat shorter as same phase
+min_cycle_duration_s = 3.0
+max_cycle_duration_s = 60.0
