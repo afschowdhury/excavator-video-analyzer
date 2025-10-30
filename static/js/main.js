@@ -4,6 +4,7 @@
 let state = {
     analyzerType: 'gemini',
     selectedPrompt: null,
+    cycleMode: 'simple',
     gpt5Model: 'gpt-4o',
     fps: 3,
     maxFrames: null,
@@ -24,6 +25,8 @@ const maxFramesSelect = document.getElementById('max-frames-select');
 const promptGroup = document.getElementById('prompt-group');
 const promptSelect = document.getElementById('prompt-select');
 const promptDescription = document.getElementById('prompt-description');
+const cycleModeGroup = document.getElementById('cycle-mode-group');
+const cycleModeSelect = document.getElementById('cycle-mode-select');
 const videoSourceSelect = document.getElementById('video-source');
 const urlGroup = document.getElementById('url-group');
 const localGroup = document.getElementById('local-group');
@@ -98,6 +101,11 @@ function setupEventListeners() {
         state.maxFrames = value === '' ? null : parseInt(value);
     });
 
+    // Cycle mode selection
+    cycleModeSelect.addEventListener('change', (e) => {
+        state.cycleMode = e.target.value;
+    });
+
     // Video source selection
     videoSourceSelect.addEventListener('change', (e) => {
         state.videoSource = e.target.value;
@@ -112,8 +120,16 @@ function setupEventListeners() {
         
         if (state.selectedPrompt) {
             promptDescription.textContent = selectedOption.dataset.description;
+            
+            // Show cycle mode dropdown if it's a cycle-time prompt
+            if (state.selectedPrompt.toLowerCase().includes('cycle')) {
+                cycleModeGroup.classList.remove('hidden');
+            } else {
+                cycleModeGroup.classList.add('hidden');
+            }
         } else {
             promptDescription.textContent = '';
+            cycleModeGroup.classList.add('hidden');
         }
         
         updateAnalyzeButton();
@@ -299,6 +315,7 @@ async function handleAnalyze() {
         } else {
             requestBody.video_url = state.videoUrl;
             requestBody.prompt_type = state.selectedPrompt;
+            requestBody.cycle_mode = state.cycleMode;
         }
 
         const response = await fetch('/api/analyze', {
@@ -314,7 +331,7 @@ async function handleAnalyze() {
         if (data.error) {
             showError(data.error);
         } else if (data.success) {
-            displayReport(data.report, data.metadata);
+            displayReport(data.report, data.metadata, data.cycle_analysis);
         }
         
     } catch (error) {
@@ -329,7 +346,7 @@ async function handleAnalyze() {
 }
 
 // Display report in output panel
-function displayReport(report, metadata = null) {
+function displayReport(report, metadata = null, cycleAnalysis = null) {
     // Use marked.js to convert markdown to HTML
     const htmlContent = marked.parse(report);
     
@@ -349,8 +366,61 @@ function displayReport(report, metadata = null) {
         `;
     }
     
+    // Add cycle time analysis section if available
+    let cycleAnalysisSection = '';
+    if (cycleAnalysis) {
+        const stats = cycleAnalysis.statistics;
+        const cycleReportHtml = marked.parse(cycleAnalysis.report);
+        const modeLabel = cycleAnalysis.mode === 'ai' ? 'AI-Enhanced Mode' : 'Simple Mode';
+        const modeBadge = `<span class="mode-badge mode-${cycleAnalysis.mode}">${modeLabel}</span>`;
+        
+        cycleAnalysisSection = `
+            <div class="cycle-analysis-section">
+                <div class="cycle-stats-header">
+                    <h3>📊 Cycle Time Statistics ${modeBadge}</h3>
+                    <div class="cycle-stats-summary">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Cycles</span>
+                            <span class="stat-value">${stats.total_cycles}</span>
+                        </div>
+                        <div class="stat-item stat-highlight">
+                            <span class="stat-label">Approx Avg</span>
+                            <span class="stat-sublabel">(with gaps)</span>
+                            <span class="stat-value">${stats.approximate_average_duration}s</span>
+                        </div>
+                        <div class="stat-item stat-highlight">
+                            <span class="stat-label">Specific Avg</span>
+                            <span class="stat-sublabel">(work only)</span>
+                            <span class="stat-value">${stats.specific_average_duration}s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Idle Time</span>
+                            <span class="stat-value">${stats.idle_time_per_cycle}s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Min</span>
+                            <span class="stat-value">${stats.min_duration}s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Max</span>
+                            <span class="stat-value">${stats.max_duration}s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Std Dev</span>
+                            <span class="stat-value">${stats.std_deviation}s</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cycle-analysis-report">
+                    ${cycleReportHtml}
+                </div>
+            </div>
+        `;
+    }
+    
     outputContainer.innerHTML = `
         ${metadataBadge}
+        ${cycleAnalysisSection}
         <div class="output-content">
             ${htmlContent}
         </div>
