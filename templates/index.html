@@ -21,8 +21,60 @@
                 <div class="card">
                     <h2>Analysis Configuration</h2>
                     
-                    <!-- Prompt Selection -->
+                    <!-- Analyzer Selection -->
                     <div class="form-group">
+                        <label for="analyzer-select">AI Analyzer</label>
+                        <select id="analyzer-select" class="form-control">
+                            {% for analyzer in analyzer_types %}
+                            <option value="{{ analyzer.id }}">{{ analyzer.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <p id="analyzer-description" class="description"></p>
+                    </div>
+
+                    <!-- GPT-5 Configuration (hidden by default) -->
+                    <div id="gpt5-config" class="hidden">
+                        <!-- Model Selection -->
+                        <div class="form-group">
+                            <label for="gpt5-model">GPT-5 Model</label>
+                            <select id="gpt5-model" class="form-control">
+                                {% for model in gpt5_config.models %}
+                                <option value="{{ model.id }}" {% if model.id == gpt5_config.default_model %}selected{% endif %}>
+                                    {{ model.name }} - {{ model.description }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- FPS Selection -->
+                        <div class="form-group">
+                            <label for="fps-select">Frame Rate (FPS)</label>
+                            <select id="fps-select" class="form-control">
+                                {% for fps in gpt5_config.fps_options %}
+                                <option value="{{ fps }}" {% if fps == gpt5_config.default_fps %}selected{% endif %}>
+                                    {{ fps }} FPS {% if fps == 1 %}(Fastest, cheapest){% elif fps == 3 %}(Balanced){% elif fps >= 5 %}(More detailed){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <p class="description">Higher FPS = More frames analyzed = Better accuracy but slower & more expensive</p>
+                        </div>
+
+                        <!-- Max Frames Selection -->
+                        <div class="form-group">
+                            <label for="max-frames-select">Maximum Frames to Analyze</label>
+                            <select id="max-frames-select" class="form-control">
+                                {% for option in gpt5_config.max_frames_options %}
+                                <option value="{{ option.value if option.value else '' }}">
+                                    {{ option.label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <p class="description">Limit total frames for testing or cost control. Leave at "All frames" for complete analysis.</p>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Selection (for Gemini) -->
+                    <div class="form-group" id="prompt-group">
                         <label for="prompt-select">Analysis Type</label>
                         <select id="prompt-select" class="form-control">
                             <option value="">Select a prompt template...</option>
@@ -30,8 +82,17 @@
                         <p id="prompt-description" class="description"></p>
                     </div>
 
-                    <!-- Video URL Input -->
+                    <!-- Video Source Selection -->
                     <div class="form-group">
+                        <label for="video-source">Video Source</label>
+                        <select id="video-source" class="form-control">
+                            <option value="url">YouTube URL</option>
+                            <option value="local">Local Video</option>
+                        </select>
+                    </div>
+
+                    <!-- Video URL Input (for YouTube) -->
+                    <div class="form-group" id="url-group">
                         <label for="video-url">YouTube Video URL</label>
                         <input 
                             type="text" 
@@ -41,8 +102,18 @@
                         >
                     </div>
 
+                    <!-- Local Video Selection -->
+                    <div class="form-group hidden" id="local-group">
+                        <label for="local-video">Select Local Video</label>
+                        <select id="local-video" class="form-control">
+                            {% for video in local_videos %}
+                            <option value="{{ video.path }}">{{ video.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- Preset Videos -->
-                    <div class="form-group">
+                    <div class="form-group" id="preset-group">
                         <label>Preset Videos</label>
                         <div class="preset-grid" id="preset-grid">
                             {% for video in preset_videos %}

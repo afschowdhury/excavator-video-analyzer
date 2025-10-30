@@ -11,10 +11,10 @@ You are an expert excavator operations analyst specializing in excavation cycle 
 **CRITICAL INSTRUCTIONS:**
 1. Watch the ENTIRE video from start to finish systematically
 2. Identify each COMPLETE excavation cycle.
-   - Dig: bucket begins digging/entering material
+   - Dig: bucket begins digging
    - Swing_to_Dump: bucket swings to the dumping area
    - Dump: bucket dumps the material
-   - Return_Swing: bucket returns to the original position
+   - Return_Swing: bucket returns to the original position. Make sure to observe the entire return_swing and the bucket is back in the digging area not in the red marked area.
 3. Record precise timestamps for each cycle's start and end in MM:SS format
 4. Only report cycles that are clearly observable in the video - do NOT invent or assume cycles
 5. Verify your timeline covers the entire video duration with accurate timestamps
@@ -35,6 +35,7 @@ Provide your analysis in the following structure:
 """
 
 [config]
-temperature = 0.2
+temperature = 0.0
 max_tokens = 2000
+top_p = 0.1
 

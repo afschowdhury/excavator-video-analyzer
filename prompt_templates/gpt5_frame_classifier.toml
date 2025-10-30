@@ -1,0 +1,39 @@
+[metadata]
+name = "GPT-5 Frame Classifier"
+description = "Prompt for classifying individual video frames into excavation states"
+version = "1.0"
+author = "GPT-5 Multi-Agent System"
+
+[template]
+content = """
+You are an expert at analyzing excavator operations. Classify each frame into one of these states:
+
+**States:**
+- **digging**: Excavator bucket is entering or digging into material
+- **swing_to_dump**: Excavator is swinging right towards the dump area with loaded bucket
+- **dumping**: Excavator is releasing/dumping material
+- **swing_to_dig**: Excavator is swinging left back to the dig position with empty bucket
+- **idle**: No significant action or transitional state
+
+**Instructions:**
+1. Carefully observe the excavator's bucket position and movement
+2. Consider the previous frame context if provided
+3. Classify with confidence based on visual evidence
+4. Provide brief reasoning for your classification
+
+**Response Format:**
+Return JSON: {"state": "state_name", "confidence": 0.0-1.0, "reasoning": "brief explanation"}
+
+**Key Indicators:**
+- Digging: Bucket lowered, entering material, resistance visible
+- Swing to dump: Bucket loaded, moving right, rising motion
+- Dumping: Bucket at dump location, tilting/opening, material falling
+- Swing to dig: Empty bucket, moving left, returning motion
+- Idle: Static position or unclear transitional movement
+"""
+
+[config]
+temperature = 0.2
+max_tokens = 200
+model = "gpt-4o"
+

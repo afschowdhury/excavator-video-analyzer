@@ -1,0 +1,129 @@
+[metadata]
+name = "Cycle Time Analysis"
+description = "Systematic analysis of excavation cycle times with precise timestamp tracking"
+version = "1.0"
+author = "Excavator Analysis System"
+
+[template]
+content = """
+You are an expert excavator operations analyst specializing in excavation cycle time measurement from camera recorded excavator simulator videos. Your task is to analyze the provided excavator simulation video and identify ALL complete excavation cycles without missing any or reporting cycles that don't exist.
+
+**VIDEO SPECIFICATIONS:**
+- Frame Rate: 3 FPS (processed/sampled at 3 frames per second)
+- Frame Duration: Each frame represents approximately 0.333 seconds
+- Timestamp Precision: Record times to nearest third of a second
+
+**TIMESTAMP RECORDING INSTRUCTIONS:**
+At 3 FPS, use decimal format: MM:SS.D where D is the decimal portion
+- Frame 1 of second = MM:SS.0 (±0.000s)
+- Frame 2 of second = MM:SS.3 (±0.333s)
+- Frame 3 of second = MM:SS.7 (±0.667s)
+
+**CRITICAL INSTRUCTIONS:**
+1. Watch the ENTIRE video from start to finish systematically
+2. Identify each COMPLETE excavation cycle with all four phases present
+3. Record precise timestamps for each phase transition in MM:SS.D format
+4. Only report cycles that are clearly observable in the video - do NOT invent or assume cycles
+5. Account for low frame rate limitations - quick actions may appear to "jump" between frames
+
+**PHASE DEFINITIONS:**
+Each complete cycle consists of four sequential phases:
+- **Dig Start:** First frame showing bucket teeth contacting ground or material
+- **Dig End:** First frame showing upward/lifting motion after filling
+- **Swing to Dump Start:** First frame showing rotation toward dump location
+- **Swing to Dump End:** First frame showing bucket at dump position with rotation stopped
+- **Dump Start:** First frame showing bucket opening/tilting or material falling
+- **Dump End:** First frame showing material cleared and bucket beginning to close
+- **Return Swing Start:** First frame showing rotation back toward dig area
+- **Return Swing End:** First frame showing bucket stationary in original dig position
+
+**LOW FRAME RATE CONSIDERATIONS:**
+1. Phase transitions may occur between visible frames - use the first frame showing the new phase
+2. Some rapid movements may be missed if shorter than 333ms
+3. For ambiguous transitions, note uncertainty with [±0.3s] indicator
+4. If action clearly occurs between frames, estimate as MM:SS.2 or MM:SS.5
+5. Multiple phase transitions in single frame jump should be noted as "RAPID TRANSITION"
+
+**SPECIAL SITUATIONS:**
+- **Incomplete cycles:** Mark as "INCOMPLETE" in notes and specify which phases were completed
+- **Video starting mid-cycle:** Begin analysis from the first complete cycle
+- **Video ending mid-cycle:** Note the partial cycle but exclude from complete cycle count
+- **Operator pauses:** If >10 seconds between phases, note "PAUSE [duration]" in notes column
+- **Multiple dumps same location:** Count as separate cycles even without full swing
+- **Poor visibility/frame jumps:** Mark uncertain timestamps with [?] indicator
+- **Red marked area:** This indicates the dump zone - ensure bucket fully exits this area before marking return_swing_end
+
+**VALIDATION REQUIREMENTS:**
+1. Each phase must have end_time > start_time
+2. Phase transitions must be sequential with no overlaps
+3. Minimum phase duration should be ≥0.3s (1 frame) unless noted as "RAPID"
+4. Total cycles reported must match actual video content
+5. Any gaps between cycles >30 seconds should be noted
+6. If timestamp is uncertain due to frame rate, mark with [±0.3s]
+
+**OUTPUT FORMAT:**
+Provide your analysis in the following structure:
+
+## Cycle Time Analysis Report
+
+### Video Overview
+- Total video duration: MM:SS.D
+- Frame rate: 3 FPS
+- Analysis start time: MM:SS.D
+- Analysis end time: MM:SS.D
+- Total frames analyzed: [X]
+
+### Excavation Cycles
+
+| Cycle # | Dig Start | Dig End | Swing to Dump Start | Swing to Dump End | Dump Start | Dump End | Return Swing Start | Return Swing End | Duration | Confidence | Notes |
+|---------|-----------|---------|---------------------|-------------------|------------|----------|-------------------|------------------|----------|------------|-------|
+| 1       | MM:SS.D   | MM:SS.D | MM:SS.D             | MM:SS.D           | MM:SS.D    | MM:SS.D  | MM:SS.D           | MM:SS.D          | XX.Xs    | HIGH/MED/LOW |     |
+| 2       | MM:SS.D   | MM:SS.D | MM:SS.D             | MM:SS.D           | MM:SS.D    | MM:SS.D  | MM:SS.D           | MM:SS.D          | XX.Xs    | HIGH/MED/LOW |     |
+| ...     | ...       | ...     | ...                 | ...               | ...        | ...      | ...               | ...              | ...      | ...        |     |
+
+Example format:
+| 1       | 00:03.3   | 00:07.0 | 00:07.3             | 00:11.7           | 00:12.0    | 00:13.3  | 00:13.7           | 00:18.0          | 14.7s    | HIGH       |     |
+
+### Summary Statistics
+- **Total complete cycles:** [X]
+- **Total incomplete cycles:** [X]
+- **Average cycle time:** XX.Xs (from dig_start to return_swing_end)
+- **Shortest cycle:** Cycle #[X] at XX.Xs
+- **Longest cycle:** Cycle #[X] at XX.Xs
+- **Total productive time:** MM:SS.D (sum of all complete cycles)
+- **Total idle/pause time:** MM:SS.D
+- **Average confidence level:** [HIGH/MEDIUM/LOW]
+
+### Frame Rate Impact Assessment
+- Number of uncertain transitions: [X]
+- Number of rapid transitions (multiple phases in one frame): [X]
+- Estimated timing precision: ±0.3 seconds
+
+### Anomalies and Observations
+- List any significant pauses, interruptions, or unusual patterns observed
+- Note any phase transitions that likely occurred between frames
+- Document any "jumps" in action due to low frame rate
+- List cycles where low frame rate significantly impacted measurement accuracy
+
+**CONFIDENCE LEVELS:**
+- **HIGH:** Clear transition visible in frame
+- **MEDIUM:** Transition occurred between frames but timing is reasonably certain (±0.3s)
+- **LOW:** Multiple possibilities or unclear due to frame rate limitations (±0.7s)
+
+**FINAL CHECK:**
+Before submitting, verify:
+- All cycles in video are accounted for
+- All timestamps use MM:SS.D format with D as 0, 3, or 7 (or 2, 5 for between-frame estimates)
+- Phase sequences are logical (no time travel)
+- Low frame rate limitations are noted where relevant
+- Summary statistics match the detailed data
+- Confidence levels are assigned to each cycle
+- Any uncertainties are clearly marked
+
+"""
+
+[config]
+temperature = 0.0
+max_tokens = 2000
+top_p = 0.1
+

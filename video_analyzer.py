@@ -69,12 +69,18 @@ class VideoAnalyzer:
                         parts=[
                             types.Part(
                                 file_data=types.FileData(file_uri=video_url),
-                                video_metadata=types.VideoMetadata(fps=3)),
+                                video_metadata=types.VideoMetadata(
+                                    fps=1,
+                                    start_offset='0s',
+                                    end_offset = '120s'
+                                    
+                                    )
+                                ),
                             types.Part(text="Please extract the excavation cycle timestamps rom the video"),
                         ]
                     ),
                     config=types.GenerateContentConfig(
-                        temperature=prompt_config.get("temperature", 0.2),
+                        temperature=prompt_config.get("temperature", 0.0),
                         system_instruction=system_instruction,
                     ),
                 )
