@@ -1,13 +1,14 @@
 import os
 import re
 
-from icecream import ic
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from icecream import ic
 from rich.console import Console
 from rich.markdown import Markdown
 
+from config import VIDEO_METADATA_CONFIG
 from prompts import PromptManager
 from report_saver import ReportSaver
 
@@ -43,6 +44,9 @@ class VideoAnalyzer:
         prompt_type="simple",
         save_to_file=True,
         filename=None,
+        video_metadata_fps=None,
+        video_metadata_start_offset=None,
+        video_metadata_end_offset=None,
     ):
         """
         Generate a performance report from a video URL
@@ -53,6 +57,9 @@ class VideoAnalyzer:
             prompt_type (str): Type of prompt to use ('simple' or 'detailed')
             save_to_file (bool): Whether to save the report to a markdown file
             filename (str, optional): Custom filename for the report
+            video_metadata_fps (int, optional): Frame sampling rate (defaults to config value)
+            video_metadata_start_offset (str, optional): Video start time offset (defaults to config value)
+            video_metadata_end_offset (str, optional): Video end time offset (defaults to config value)
 
         Returns:
             str: Generated report in markdown format
@@ -61,6 +68,11 @@ class VideoAnalyzer:
         ic(system_instruction)
         prompt_config = self.prompt_manager.get_prompt_config(prompt_type)
         ic(prompt_config)
+
+        # Use centralized config values with optional overrides
+        fps = video_metadata_fps if video_metadata_fps is not None else VIDEO_METADATA_CONFIG["fps"]
+        start_offset = video_metadata_start_offset if video_metadata_start_offset is not None else VIDEO_METADATA_CONFIG["start_offset"]
+        end_offset = video_metadata_end_offset if video_metadata_end_offset is not None else VIDEO_METADATA_CONFIG["end_offset"]
 
         with self.console.status("[bold green]Generating report...") as status:
             try:
@@ -71,13 +83,12 @@ class VideoAnalyzer:
                             types.Part(
                                 file_data=types.FileData(file_uri=video_url),
                                 video_metadata=types.VideoMetadata(
-                                    fps=1,
-                                    start_offset='0s',
-                                    end_offset = '120s'
-                                    
-                                    )
-                                ),
-                            types.Part(text="Please extract the excavation cycle timestamps rom the video"),
+                                    fps=fps,
+                                    start_offset=start_offset,
+                                    end_offset=end_offset
+                                )
+                            ),
+                            types.Part(text="Please extract the excavation cycle timestamps from the video"),
                         ]
                     ),
                     config=types.GenerateContentConfig(

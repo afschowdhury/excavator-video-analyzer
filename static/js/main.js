@@ -36,6 +36,7 @@ const localVideoSelect = document.getElementById('local-video');
 const videoEmbed = document.getElementById('video-embed');
 const videoPlaceholder = document.getElementById('video-placeholder');
 const analyzeBtn = document.getElementById('analyze-btn');
+const generateReportBtn = document.getElementById('generate-report-btn');
 const outputContainer = document.getElementById('output-container');
 const presetGrid = document.getElementById('preset-grid');
 
@@ -180,6 +181,9 @@ function setupEventListeners() {
     
     // Analyze button
     analyzeBtn.addEventListener('click', handleAnalyze);
+    
+    // Generate HTML Report button
+    generateReportBtn.addEventListener('click', handleGenerateReport);
 }
 
 // Update UI based on selected analyzer
@@ -274,6 +278,8 @@ function updateAnalyzeButton() {
     }
     
     analyzeBtn.disabled = !isValid;
+    // Generate Report button has same requirements as Analyze
+    generateReportBtn.disabled = !isValid;
 }
 
 // Handle analyze button click
@@ -437,5 +443,103 @@ function showError(message) {
             <strong>Error:</strong> ${message}
         </div>
     `;
+}
+
+// Handle Generate HTML Report button click
+async function handleGenerateReport() {
+    if (state.isAnalyzing) return;
+    
+    state.isAnalyzing = true;
+    updateAnalyzeButton();
+    
+    // Update button UI
+    const btnText = generateReportBtn.querySelector('.btn-text');
+    const btnLoader = generateReportBtn.querySelector('.btn-loader');
+    const originalText = btnText.textContent;
+    btnText.textContent = 'Generating Report...';
+    btnLoader.classList.remove('hidden');
+    
+    // Show loading state in output
+    outputContainer.innerHTML = `
+        <div class="output-placeholder">
+            <div class="btn-loader" style="width: 50px; height: 50px; border-width: 4px;"></div>
+            <p style="margin-top: 20px;">Generating comprehensive HTML training report...</p>
+            <p style="font-size: 0.9em; color: var(--text-secondary);">This includes AI-powered insights and may take 1-2 minutes.</p>
+        </div>
+    `;
+    
+    try {
+        // Build request body  - use the same video analysis endpoint with generate_html_report flag
+        const requestBody = {
+            analyzer_type: state.analyzerType,
+            generate_html_report: true,
+            joystick_data_path: 'data/joystick_data'
+        };
+
+        if (state.analyzerType === 'gpt5') {
+            requestBody.video_path = state.videoPath;
+            requestBody.fps = state.fps;
+            requestBody.max_frames = state.maxFrames;
+            requestBody.gpt5_model = state.gpt5Model;
+        } else {
+            requestBody.video_url = state.videoUrl;
+            requestBody.prompt_type = state.selectedPrompt;
+            requestBody.cycle_mode = state.cycleMode;
+        }
+
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        // Check if response is HTML (for download)
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('text/html')) {
+            // Download the HTML file
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `training_report_${new Date().getTime()}.html`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Show success message
+            outputContainer.innerHTML = `
+                <div class="output-placeholder" style="color: var(--success-color);">
+                    <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: var(--success-color);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p><strong>✓ HTML Report Generated Successfully!</strong></p>
+                    <p style="font-size: 0.9em;">The report has been downloaded to your computer.</p>
+                    <p style="font-size: 0.85em; color: var(--text-secondary); margin-top: 10px;">Open the HTML file in your browser to view the complete training report.</p>
+                </div>
+            `;
+        } else {
+            // Parse JSON response
+            const data = await response.json();
+            
+            if (data.error) {
+                showError(data.error);
+            } else {
+                showError('Unexpected response format');
+            }
+        }
+        
+    } catch (error) {
+        showError('Failed to generate HTML report: ' + error.message);
+    } finally {
+        // Reset button UI
+        state.isAnalyzing = false;
+        btnText.textContent = originalText;
+        btnLoader.classList.add('hidden');
+        updateAnalyzeButton();
+    }
 }
 

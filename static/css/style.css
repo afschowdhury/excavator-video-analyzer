@@ -228,10 +228,33 @@ select.form-control {
     box-shadow: var(--shadow-lg);
 }
 
+.btn-secondary {
+    background: #10b981;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
 .btn:disabled {
     background: var(--secondary-color);
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.button-group .btn {
+    flex: 1;
+    min-width: 180px;
 }
 
 .btn-loader {

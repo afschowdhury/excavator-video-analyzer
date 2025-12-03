@@ -1,4 +1,4 @@
 {"SI":{"Swing":{"Swing":null,"Bucket":0.1373493976,"Arm":0.2388663968,"Boom":0.1755725191},"Bucket":{"Swing":0.1373493976,"Bucket":null,"Arm":0.3591836735,"Boom":0.4046121593},"Arm":{"Swing":0.2388663968,"Bucket":0.3591836735,"Arm":null,"Boom":0.4917127072},"Boom":{"Swing":0.1755725191,"Bucket":0.4046121593,"Arm":0.4917127072,"Boom":null}},
 "BCS":0.291,
 "control_usage":{"2_controls":78.84297520661157, "3_controls": 28.760330578512395, "4_controls": 4.297520661157025}
-}
+} 

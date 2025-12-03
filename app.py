@@ -1,13 +1,16 @@
 """Flask application for Video Analyzer Web UI"""
 
+import argparse
 import os
 import re
-import argparse
-from flask import Flask, render_template, jsonify, request
+
+from flask import Flask, jsonify, make_response, render_template, request
+
+from config import ANALYZER_TYPES, APP_CONFIG, GPT5_CONFIG, LOCAL_VIDEOS, PRESET_VIDEOS
+from cycle_time_analyzer import CycleTimeAnalyzer
+from html_report_analyzer import HTMLReportAnalyzer
 from video_analyzer import VideoAnalyzer
 from video_analyzer_gpt5 import VideoAnalyzerGPT5
-from cycle_time_analyzer import CycleTimeAnalyzer
-from config import PRESET_VIDEOS, APP_CONFIG, GPT5_CONFIG, LOCAL_VIDEOS, ANALYZER_TYPES
 
 app = Flask(__name__)
 
@@ -31,6 +34,13 @@ try:
 except Exception as e:
     print(f"Warning: Could not initialize CycleTimeAnalyzer: {e}")
     cycle_analyzer = None
+
+# Initialize HTMLReportAnalyzer
+try:
+    html_report_analyzer = HTMLReportAnalyzer()
+except Exception as e:
+    print(f"Warning: Could not initialize HTMLReportAnalyzer: {e}")
+    html_report_analyzer = None
 
 # Keep backward compatibility
 analyzer = analyzer_gemini
@@ -114,6 +124,8 @@ def analyze_video():
         fps = data.get('fps', GPT5_CONFIG['default_fps'])  # For GPT-5
         gpt5_model = data.get('gpt5_model', GPT5_CONFIG['default_model'])  # For GPT-5
         max_frames = data.get('max_frames', GPT5_CONFIG['default_max_frames'])  # For GPT-5
+        generate_html_report_flag = data.get('generate_html_report', False)  # For HTML report generation
+        joystick_data_path = data.get('joystick_data_path', 'data/joystick_data')  # For HTML report
         
         # Determine which analyzer to use
         if analyzer_type == 'gpt5':
@@ -223,6 +235,47 @@ def analyze_video():
                 except Exception as e:
                     print(f"Warning: Could not generate cycle analysis: {e}")
             
+            # Check if HTML report generation is requested
+            if generate_html_report_flag and html_report_analyzer is not None:
+                try:
+                    # Parse cycle data from report
+                    cycle_data = VideoAnalyzer.parse_cycle_data(report)
+                    
+                    if not cycle_data:
+                        return jsonify({'error': 'No cycle data found in video analysis. HTML report requires cycle time data.'}), 400
+                    
+                    # Ensure joystick data path is absolute
+                    if not os.path.isabs(joystick_data_path):
+                        joystick_data_path = os.path.join(os.getcwd(), joystick_data_path)
+                    
+                    # Prepare operator info with defaults
+                    operator_info = {
+                        'operator_name': f'Operator (Video: {video_id})',
+                        'equipment': 'Excavator',
+                        'exercise_date': __import__('datetime').datetime.now().strftime('%Y-%m-%d'),
+                        'session_duration': 'N/A'
+                    }
+                    
+                    # Generate HTML report
+                    html_content = html_report_analyzer.generate_html_report(
+                        cycle_data=cycle_data,
+                        joystick_data_path=joystick_data_path,
+                        operator_info=operator_info,
+                        save_to_file=False,
+                    )
+                    
+                    # Return HTML file for download
+                    response = make_response(html_content)
+                    response.headers['Content-Type'] = 'text/html'
+                    response.headers['Content-Disposition'] = f'attachment; filename=training_report_{video_id}_{__import__("datetime").datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+                    return response
+                    
+                except Exception as e:
+                    import traceback
+                    print(f"Error generating HTML report: {e}")
+                    print(traceback.format_exc())
+                    return jsonify({'error': f'Failed to generate HTML report: {str(e)}'}), 500
+            
             response_data = {
                 'success': True,
                 'report': report,
@@ -243,6 +296,145 @@ def analyze_video():
 def get_presets():
     """Get preset video configurations"""
     return jsonify({'presets': PRESET_VIDEOS})
+
+
+@app.route('/api/generate_html_report', methods=['POST'])
+def generate_html_report():
+    """Generate HTML training report from cycle data and joystick analytics"""
+    try:
+        if html_report_analyzer is None:
+            return jsonify({'error': 'HTMLReportAnalyzer not initialized. Please check your API key.'}), 500
+        
+        data = request.get_json()
+        
+        # Extract required data
+        cycle_data = data.get('cycle_data')
+        joystick_data_path = data.get('joystick_data_path', 'data/joystick_data')
+        operator_info = data.get('operator_info', {})
+        save_to_file = data.get('save_to_file', True)
+        return_html = data.get('return_html', False)
+        
+        # Validate inputs
+        if not cycle_data:
+            return jsonify({'error': 'cycle_data is required'}), 400
+        
+        # Ensure joystick data path is absolute
+        if not os.path.isabs(joystick_data_path):
+            joystick_data_path = os.path.join(os.getcwd(), joystick_data_path)
+        
+        # Set default operator info
+        operator_info.setdefault('operator_name', 'Unknown Operator')
+        operator_info.setdefault('equipment', 'Excavator')
+        operator_info.setdefault('exercise_date', 
+                                 __import__('datetime').datetime.now().strftime('%Y-%m-%d'))
+        operator_info.setdefault('session_duration', 'N/A')
+        
+        # Generate HTML report
+        html_content = html_report_analyzer.generate_html_report(
+            cycle_data=cycle_data,
+            joystick_data_path=joystick_data_path,
+            operator_info=operator_info,
+            save_to_file=save_to_file,
+        )
+        
+        # Get pipeline data for metadata
+        pipeline_data = html_report_analyzer.get_pipeline_data()
+        
+        response_data = {
+            'success': True,
+            'message': 'HTML report generated successfully',
+            'metadata': {
+                'total_cycles': pipeline_data.get('cycle_metrics', {}).get('total_cycles', 0),
+                'productivity_score': pipeline_data.get('performance_scores', {}).get('productivity_score', 0),
+                'control_skill_score': pipeline_data.get('performance_scores', {}).get('control_skill_score', 0),
+                'safety_score': pipeline_data.get('performance_scores', {}).get('safety_score', 0),
+                'proficiency_level': pipeline_data.get('insights', {}).get('proficiency_level', 'Unknown'),
+            }
+        }
+        
+        # Include HTML content if requested
+        if return_html:
+            response_data['html_content'] = html_content
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        import traceback
+        print(f"Error generating HTML report: {e}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/generate_html_report_from_video', methods=['POST'])
+def generate_html_report_from_video():
+    """Generate HTML report directly from video analysis results"""
+    try:
+        if html_report_analyzer is None:
+            return jsonify({'error': 'HTMLReportAnalyzer not initialized'}), 500
+        
+        if analyzer_gemini is None:
+            return jsonify({'error': 'Video analyzer not initialized'}), 500
+        
+        data = request.get_json()
+        
+        # Get video analysis results
+        video_url = data.get('video_url')
+        prompt_type = data.get('prompt_type', 'cycle_time_simple')
+        joystick_data_path = data.get('joystick_data_path', 'data/joystick_data')
+        operator_info = data.get('operator_info', {})
+        
+        if not video_url:
+            return jsonify({'error': 'video_url is required'}), 400
+        
+        # First, analyze the video to get cycle data
+        report = analyzer_gemini.generate_report(
+            video_url=video_url,
+            prompt_type=prompt_type,
+            save_to_file=False
+        )
+        
+        if report is None:
+            return jsonify({'error': 'Failed to analyze video'}), 500
+        
+        # Parse cycle data from report
+        cycle_data = VideoAnalyzer.parse_cycle_data(report)
+        
+        if not cycle_data:
+            return jsonify({'error': 'No cycle data found in video analysis'}), 400
+        
+        # Ensure joystick data path is absolute
+        if not os.path.isabs(joystick_data_path):
+            joystick_data_path = os.path.join(os.getcwd(), joystick_data_path)
+        
+        # Generate HTML report
+        html_content = html_report_analyzer.generate_html_report(
+            cycle_data=cycle_data,
+            joystick_data_path=joystick_data_path,
+            operator_info=operator_info,
+            save_to_file=True,
+        )
+        
+        # Get pipeline data
+        pipeline_data = html_report_analyzer.get_pipeline_data()
+        
+        return jsonify({
+            'success': True,
+            'message': 'HTML report generated from video analysis',
+            'video_analysis_report': report,
+            'metadata': {
+                'total_cycles': len(cycle_data),
+                'productivity_score': pipeline_data.get('performance_scores', {}).get('productivity_score', 0),
+                'control_skill_score': pipeline_data.get('performance_scores', {}).get('control_skill_score', 0),
+                'safety_score': pipeline_data.get('performance_scores', {}).get('safety_score', 0),
+                'proficiency_level': pipeline_data.get('insights', {}).get('proficiency_level', 'Unknown'),
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error: {e}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

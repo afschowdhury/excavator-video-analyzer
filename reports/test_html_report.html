@@ -1,0 +1,649 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excavator Operator Training Analysis Report</title>
+    <style>
+        /* --- Google Font Import --- */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+        /* --- CSS Variables for Theming --- */
+        :root {
+            --primary-color: #003366; /* Deep Blue */
+            --secondary-color: #005a9e; /* Lighter Blue */
+            --accent-color: #f0ad4e; /* Orange/Yellow Accent */
+            --text-color: #333333;
+            --light-text-color: #ffffff;
+            --bg-color: #f4f7f9;
+            --card-bg-color: #ffffff;
+            --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+
+            --status-good: #28a745;
+            --status-good-bg: #e9f6ec;
+            --status-satisfactory: #ffc107;
+            --status-satisfactory-bg: #fff8e7;
+            --status-improvement: #dc3545;
+            --status-improvement-bg: #fbebec;
+        }
+
+        /* --- General & Body Styles --- */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 8px;
+        }
+
+        /* --- Header --- */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--primary-color);
+            margin-bottom: 25px;
+        }
+
+        .report-header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .report-header .logo img {
+            max-height: 60px;
+        }
+
+        /* --- Section Styles --- */
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 500;
+            color: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Metadata Table --- */
+        .metadata-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .metadata-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metadata-table td:first-child {
+            font-weight: 500;
+            color: #555;
+            width: 200px;
+        }
+
+        /* --- Performance Score Cards --- */
+        .score-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 6px var(--shadow-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .card-score {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-score .total {
+            font-size: 0.5em;
+            font-weight: 400;
+            color: #999;
+        }
+
+        .card-status {
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            color: var(--light-text-color);
+        }
+
+        .status-good { background-color: var(--status-good); }
+        .status-satisfactory { background-color: var(--status-satisfactory); }
+        .status-improvement { background-color: var(--status-improvement); }
+        
+        .score-good { color: var(--status-good); }
+        .score-satisfactory { color: var(--status-satisfactory); }
+        .score-improvement { color: var(--status-improvement); }
+
+        /* --- Two-Column Layout for Metrics --- */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        /* --- Generic Table Styles --- */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+
+        .data-table tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+
+        .data-table .trend-declining {
+            color: var(--status-improvement);
+        }
+        .data-table .trend-declining::before {
+            content: '▼ ';
+        }
+
+        /* --- Control Analysis Section --- */
+        .control-usage-chart {
+            padding: 10px 0;
+        }
+        .bar-container {
+            margin-bottom: 15px;
+        }
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        .bar-label .control-name {
+            font-weight: 500;
+        }
+        .bar-bg {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            background-color: var(--secondary-color);
+            border-radius: 5px 0 0 5px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .si-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        .si-matrix th, .si-matrix td {
+            width: 20%;
+            height: 60px;
+            border: 1px solid var(--border-color);
+        }
+        .si-matrix th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        .si-matrix td {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: var(--light-text-color);
+        }
+        .si-matrix .header-cell {
+            background-color: transparent;
+            border: none;
+        }
+        .si-matrix .level-0 { background-color: #f8f9fa; color: var(--text-color); }
+        .si-matrix .level-1 { background-color: #cce5ff; color: var(--primary-color); }
+        .si-matrix .level-2 { background-color: #99caff; }
+        .si-matrix .level-3 { background-color: #66b0ff; }
+        .si-matrix .level-4 { background-color: #3395ff; }
+        .si-matrix .level-5 { background-color: var(--secondary-color); }
+
+        /* --- AI Insights Section --- */
+        .insights-summary {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            background-color: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item .label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .summary-item .value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .recommendations ol {
+            list-style: none;
+            counter-reset: recommendations-counter;
+            padding-left: 0;
+        }
+        .recommendations li {
+            counter-increment: recommendations-counter;
+            margin-bottom: 20px;
+            padding-left: 50px;
+            position: relative;
+        }
+        .recommendations li::before {
+            content: counter(recommendations-counter);
+            position: absolute;
+            left: 0;
+            top: -2px;
+            width: 35px;
+            height: 35px;
+            background-color: var(--secondary-color);
+            color: var(--light-text-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        .recommendations strong {
+            color: var(--primary-color);
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        /* --- Footer --- */
+        .report-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 992px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .report-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .report-header h1 {
+                font-size: 1.8em;
+            }
+            .container {
+                padding: 15px;
+            }
+            .score-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .score-cards {
+                grid-template-columns: 1fr;
+            }
+            .insights-summary {
+                flex-direction: column;
+                text-align: left;
+                gap: 10px;
+            }
+            .summary-item {
+                text-align: left;
+            }
+        }
+
+        /* --- Print Styles --- */
+        @media print {
+            body {
+                background-color: #fff;
+                font-size: 12pt;
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+            .report-header {
+                border-bottom: 2px solid #000;
+            }
+            .report-header h1, .section-title, .card-score, .score-good, .score-satisfactory, .score-improvement {
+                color: #000 !important;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+            }
+            .card-status {
+                color: #000 !important;
+                background-color: #eee !important;
+                border: 1px solid #ccc;
+            }
+            .section {
+                page-break-inside: avoid;
+            }
+            .recommendations, .report-footer {
+                page-break-before: always;
+            }
+            .recommendations li::before {
+                background-color: #ccc;
+                color: #000;
+            }
+            .bar-fill {
+                background-color: #999 !important;
+            }
+            .si-matrix td {
+                color: #000 !important;
+            }
+            .si-matrix .level-0 { background-color: #fff !important; }
+            .si-matrix .level-1 { background-color: #e6e6e6 !important; }
+            .si-matrix .level-2 { background-color: #cccccc !important; }
+            .si-matrix .level-3 { background-color: #b3b3b3 !important; }
+            .si-matrix .level-4 { background-color: #999999 !important; }
+            .si-matrix .level-5 { background-color: #808080 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="report-header">
+            <div>
+                <h1>Operator Performance Report</h1>
+                <p style="margin:0; color: #555;">Excavator Training Analysis</p>
+            </div>
+            <div class="logo">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMzM2NiIgd2lkdGg9IjY0cHgiIGhlaWdodD0iNjRweCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0yMi43IDEwLjlMMjEgOC42M2wtMi4yNC0xLjA0Yy0uNDYtLjIxLTcuNDQtMy40Mi0xMS4xOS0zLjQyQzQuNDYgNC4xNyAyIDYuNjMgMiA5Ljc0VjEzbDEuMzQtLjY3Yy4xOS0uMS4zMy0uMy4zMy0uNTJWOS43NGMwLTIuMDggMS42OS0zLjU3IDMuNzYtMy41N2MyLjQ1IDAgNy44MSAxLjkgMTAuNjcgMy4zNGwxLjU3LjcyLTEuNjUgMS4xYy0uNDQuMjktLjcyLjczLS43MiAxLjI0djIuNDRsLTIuMy0uOTljLS40NC0uMTktLjkzLjA0LTEuMTUuNDhsLTEuMzggMi43NmMtLjIuMzktLjA3Ljg5LjMxIDEuMTZsMS45NSAxLjM4Yy4zOS4yOC45LjMxIDEuMzEuMDhsMi4zOS0xLjM4IDEuNTMtMy4wNmMuMjMtLjQ1LjctLjcyIDEuMTktLjcyaC4xN2MuNjcgMCAxLjE4LjYgMSAxLjI4bC0xLjA5IDIuMTgtMS45NiAxLjM5Yy0uNDEuMjgtLjU0LjgxLS4yOSAxLjI0bDEuMzggMi4zOWMyLjA4IDEuMTYgNC41OCAxLjgxIDYuNTggMS44MWgxLjM4YzEuNDUgMCAyLjYyLTEuMTcgMi42Mi0yLjYyVjEyYzAtLjY5LS41Ni0xLjI1LTEuMjUtMS4yNWgtLjA1Yy0uNDYgMC0uOS4yMy0xLjE1LjYyTDIwIDEyLjE3di0uNTNjMC0uNDEuMjYtLjc3LjY0LS45MkwyMi41IDEwYy4wOC0uMDMuMTUtLjA4LjE5LS4xNS4wNy0uMTMuMDQtLjI5LS4wOS0uMzlsLS4xLS40NnoiLz48L3N2Zz4=" alt="Company Logo">
+            </div>
+        </header>
+
+        <main>
+            <section class="section" id="metadata">
+                <h2 class="section-title">Report Summary</h2>
+                <table class="metadata-table">
+                    <tbody>
+                        <tr>
+                            <td>Operator Name:</td>
+                            <td>Test Operator B8</td>
+                        </tr>
+                        <tr>
+                            <td>Equipment:</td>
+                            <td>Excavator CAT 320</td>
+                        </tr>
+                        <tr>
+                            <td>Exercise Date:</td>
+                            <td>2025-12-03</td>
+                        </tr>
+                        <tr>
+                            <td>Session Duration:</td>
+                            <td>2 minutes 20 seconds</td>
+                        </tr>
+                        <tr>
+                            <td>Analysis System:</td>
+                            <td>Gemini 2.5 Pro Multi-Agent System</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section" id="performance-scores">
+                <h2 class="section-title">Performance Scores</h2>
+                <div class="score-cards">
+                    <div class="card">
+                        <div class="card-title">Productivity</div>
+                        <div class="card-score score-improvement">48.0<span class="total">/100</span></div>
+                        <div class="card-status status-improvement">Needs Improvement</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Control Skill</div>
+                        <div class="card-score score-good">83.0<span class="total">/100</span></div>
+                        <div class="card-status status-good">Good</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Safety</div>
+                        <div class="card-score score-satisfactory">61.0<span class="total">/100</span></div>
+                        <div class="card-status status-satisfactory">Satisfactory</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Overall</div>
+                        <div class="card-score score-improvement">0<span class="total">/100</span></div>
+                        <div class="card-status status-improvement">Needs Improvement</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="key-metrics">
+                <div class="metrics-grid">
+                    <div class="metric-group">
+                        <h3 class="section-title">Cycle Metrics</h3>
+                        <table class="data-table">
+                            <tbody>
+                                <tr>
+                                    <td>Total Cycles</td>
+                                    <td>4</td>
+                                </tr>
+                                <tr>
+                                    <td>Average Cycle Time</td>
+                                    <td>25.25s</td>
+                                </tr>
+                                <tr>
+                                    <td>Min / Max Cycle Time</td>
+                                    <td>16s / 34s</td>
+                                </tr>
+                                <tr>
+                                    <td>Consistency Score</td>
+                                    <td class="score-satisfactory">68.8%</td>
+                                </tr>
+                                <tr>
+                                    <td>Trend</td>
+                                    <td class="trend-declining">Declining (slower over time)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="metric-group">
+                        <h3 class="section-title">Joystick Analytics</h3>
+                        <table class="data-table">
+                            <tbody>
+                                <tr>
+                                    <td>Total Actions</td>
+                                    <td>0</td>
+                                </tr>
+                                <tr>
+                                    <td>Smoothness Index</td>
+                                    <td class="score-improvement">0.0%</td>
+                                </tr>
+                                <tr>
+                                    <td>Efficiency Score</td>
+                                    <td class="score-improvement">0.0%</td>
+                                </tr>
+                                <tr>
+                                    <td>Simultaneous Usage</td>
+                                    <td class="score-improvement">0.0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="control-analysis">
+                <div class="metrics-grid">
+                    <div class="control-usage">
+                        <h3 class="section-title">Control Usage Distribution</h3>
+                        <div class="control-usage-chart">
+                            <div class="bar-container">
+                                <div class="bar-label"><span class="control-name">Stick</span><span>38%</span></div>
+                                <div class="bar-bg"><div class="bar-fill" style="width: 38%;"></div></div>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-label"><span class="control-name">Boom</span><span>31%</span></div>
+                                <div class="bar-bg"><div class="bar-fill" style="width: 31%;"></div></div>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-label"><span class="control-name">Swing</span><span>22%</span></div>
+                                <div class="bar-bg"><div class="bar-fill" style="width: 22%;"></div></div>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-label"><span class="control-name">Bucket</span><span>9%</span></div>
+                                <div class="bar-bg"><div class="bar-fill" style="width: 9%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="simultaneous-input">
+                        <h3 class="section-title">Simultaneous Input (SI) Matrix</h3>
+                        <table class="si-matrix">
+                            <thead>
+                                <tr>
+                                    <th class="header-cell"></th>
+                                    <th>Swing</th>
+                                    <th>Boom</th>
+                                    <th>Stick</th>
+                                    <th>Bucket</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Swing</th>
+                                    <td class="level-0">-</td>
+                                    <td class="level-2">18%</td>
+                                    <td class="level-4">35%</td>
+                                    <td class="level-1">5%</td>
+                                </tr>
+                                <tr>
+                                    <th>Boom</th>
+                                    <td class="level-2">18%</td>
+                                    <td class="level-0">-</td>
+                                    <td class="level-5">42%</td>
+                                    <td class="level-3">25%</td>
+                                </tr>
+                                <tr>
+                                    <th>Stick</th>
+                                    <td class="level-4">35%</td>
+                                    <td class="level-5">42%</td>
+                                    <td class="level-0">-</td>
+                                    <td class="level-2">15%</td>
+                                </tr>
+                                <tr>
+                                    <th>Bucket</th>
+                                    <td class="level-1">5%</td>
+                                    <td class="level-3">25%</td>
+                                    <td class="level-2">15%</td>
+                                    <td class="level-0">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="ai-insights">
+                <h2 class="section-title">AI-Powered Insights & Recommendations</h2>
+                <div class="insights-summary">
+                    <div class="summary-item">
+                        <div class="label">Proficiency Level</div>
+                        <div class="value">Intermediate</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">Recommended Training Hours</div>
+                        <div class="value">20.0</div>
+                    </div>
+                </div>
+                <div class="recommendations">
+                    <h3>Key Recommendations</h3>
+                    <ol>
+                        <li>
+                            <strong>Implement 'Arc Trajectory' drills to promote blended controls.</strong>
+                            The goal is to practice moving the bucket in a smooth arc from the trench to the dump point by simultaneously using swing, boom, and stick functions, eliminating sharp, inefficient angles.
+                        </li>
+                        <li>
+                            <strong>Utilize 'Rhythm and Pacing' exercises.</strong>
+                            Set a target cycle time of 26 seconds and challenge the operator to complete five consecutive cycles within a +/- 1.5-second window. This prioritizes consistency over raw speed, which will naturally improve as muscle memory develops.
+                        </li>
+                        <li>
+                            <strong>Practice the 'Truck Loading' drill, focusing on minimizing control movements.</strong>
+                            The operator should aim to position the excavator to require as little stick/boom adjustment as possible once the swing is complete, forcing more efficient planning and simultaneous function use.
+                        </li>
+                        <li>
+                            <strong>Conduct video review sessions.</strong>
+                            Record the operator and play back the footage, highlighting moments of hesitation or sequential control. Compare these to videos of expert operators to visually demonstrate the efficiency of blended movements.
+                        </li>
+                    </ol>
+                </div>
+            </section>
+        </main>
+
+        <footer class="report-footer">
+            <p>Analysis generated by Gemini 2.5 Pro Multi-Agent System on 2025-12-03.</p>
+            <p>&copy; 2025 Advanced Construction Analytics Inc. All rights reserved.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

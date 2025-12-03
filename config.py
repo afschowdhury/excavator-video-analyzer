@@ -3,7 +3,7 @@
 # Preset video URLs with metadata
 PRESET_VIDEOS = [
     {
-        "url": "https://youtu.be/QdWnkH3TGDU",
+        "url": "https://www.youtube.com/watch?v=8PAU1LNXYR0",
         "title": "Excavator Demo",
         "thumbnail": "https://img.youtube.com/vi/QdWnkH3TGDU/mqdefault.jpg",
         "video_id": "QdWnkH3TGDU"
@@ -58,4 +58,12 @@ ANALYZER_TYPES = [
     {"id": "gemini", "name": "Gemini (Native Video)", "description": "Google Gemini with native video support"},
     {"id": "gpt5", "name": "GPT-5 (Multi-Agent)", "description": "OpenAI GPT-5 with frame-by-frame analysis"},
 ]
+
+# Video Metadata Configuration
+# Used by VideoAnalyzer (Gemini) for video processing parameters
+VIDEO_METADATA_CONFIG = {
+    "fps": 1,  # Frame sampling rate (frames per second to extract)
+    "start_offset": "0s",  # Video start time offset
+    "end_offset": "120s",  # Video end time offset (2 minutes)
+}
 
