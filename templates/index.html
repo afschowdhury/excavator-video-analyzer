@@ -82,6 +82,16 @@
                         <p id="prompt-description" class="description"></p>
                     </div>
 
+                    <!-- Cycle Time Analysis Mode (for Gemini cycle prompts) -->
+                    <div class="form-group hidden" id="cycle-mode-group">
+                        <label for="cycle-mode-select">Cycle Time Analysis Mode</label>
+                        <select id="cycle-mode-select" class="form-control">
+                            <option value="simple" selected>Simple Mode (Fast, no AI)</option>
+                            <option value="ai">AI-Enhanced Mode (Slower, with insights)</option>
+                        </select>
+                        <p class="description">Simple mode uses pure statistics. AI mode generates insights using Gemini Flash.</p>
+                    </div>
+
                     <!-- Video Source Selection -->
                     <div class="form-group">
                         <label for="video-source">Video Source</label>

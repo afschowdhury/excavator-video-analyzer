@@ -1,4 +1,5 @@
 import os
+import re
 
 from icecream import ic
 from dotenv import load_dotenv
@@ -116,6 +117,58 @@ class VideoAnalyzer:
             Dict[str, str]: Dictionary of prompt types and their descriptions
         """
         return self.prompt_manager.list_prompts()
+
+    @staticmethod
+    def parse_cycle_data(report_text):
+        """
+        Parse cycle time data from a markdown report
+
+        Args:
+            report_text (str): The markdown report text containing cycle time table
+
+        Returns:
+            list: List of dictionaries with cycle data, each containing:
+                  - cycle_num: Cycle number
+                  - start_time: Start time in MM:SS format
+                  - end_time: End time in MM:SS format
+                  - duration: Duration in seconds
+                  - notes: Brief observation notes
+        """
+        if not report_text:
+            return []
+
+        cycles = []
+        
+        # Look for table rows with cycle data
+        # Pattern: | cycle_num | MM:SS | MM:SS | notes |
+        pattern = r'\|\s*(\d+)\s*\|\s*(\d+):(\d+)\s*\|\s*(\d+):(\d+)\s*\|([^|]*)\|'
+        
+        matches = re.finditer(pattern, report_text)
+        
+        for match in matches:
+            cycle_num = int(match.group(1))
+            start_min = int(match.group(2))
+            start_sec = int(match.group(3))
+            end_min = int(match.group(4))
+            end_sec = int(match.group(5))
+            notes = match.group(6).strip()
+            
+            # Convert to seconds
+            start_time_sec = start_min * 60 + start_sec
+            end_time_sec = end_min * 60 + end_sec
+            duration = end_time_sec - start_time_sec
+            
+            cycles.append({
+                'cycle_num': cycle_num,
+                'start_time': f"{start_min:02d}:{start_sec:02d}",
+                'end_time': f"{end_min:02d}:{end_sec:02d}",
+                'start_time_sec': start_time_sec,
+                'end_time_sec': end_time_sec,
+                'duration': duration,
+                'notes': notes
+            })
+        
+        return cycles
 
 
 def main():

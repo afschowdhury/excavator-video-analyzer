@@ -6,6 +6,7 @@ import argparse
 from flask import Flask, render_template, jsonify, request
 from video_analyzer import VideoAnalyzer
 from video_analyzer_gpt5 import VideoAnalyzerGPT5
+from cycle_time_analyzer import CycleTimeAnalyzer
 from config import PRESET_VIDEOS, APP_CONFIG, GPT5_CONFIG, LOCAL_VIDEOS, ANALYZER_TYPES
 
 app = Flask(__name__)
@@ -23,6 +24,13 @@ try:
 except Exception as e:
     print(f"Warning: Could not initialize GPT-5 VideoAnalyzer: {e}")
     analyzer_gpt5 = None
+
+# Initialize CycleTimeAnalyzer
+try:
+    cycle_analyzer = CycleTimeAnalyzer()
+except Exception as e:
+    print(f"Warning: Could not initialize CycleTimeAnalyzer: {e}")
+    cycle_analyzer = None
 
 # Keep backward compatibility
 analyzer = analyzer_gemini
@@ -161,6 +169,9 @@ def analyze_video():
             if not prompt_type:
                 return jsonify({'error': 'Prompt type is required'}), 400
             
+            # Get cycle mode (default to 'simple')
+            cycle_mode = data.get('cycle_mode', 'simple')
+            
             # Validate video URL
             video_id = extract_video_id(video_url)
             if not video_id:
@@ -176,12 +187,53 @@ def analyze_video():
             if report is None:
                 return jsonify({'error': 'Failed to generate report'}), 500
             
-            return jsonify({
+            # Try to generate cycle time analysis if this is a cycle time prompt
+            cycle_analysis = None
+            if 'cycle' in prompt_type.lower() and cycle_analyzer is not None:
+                try:
+                    # Parse cycle data from report
+                    cycle_data = VideoAnalyzer.parse_cycle_data(report)
+                    
+                    if cycle_data:
+                        # Calculate statistics
+                        statistics = cycle_analyzer.calculate_statistics(cycle_data)
+                        
+                        # Determine if AI mode should be used
+                        use_ai = (cycle_mode == 'ai')
+                        
+                        # Generate analysis report
+                        cycle_analysis_report = cycle_analyzer.generate_analysis_report(
+                            statistics, 
+                            use_ai=use_ai
+                        )
+                        
+                        cycle_analysis = {
+                            'report': cycle_analysis_report,
+                            'mode': cycle_mode,
+                            'statistics': {
+                                'total_cycles': statistics['total_cycles'],
+                                'approximate_average_duration': round(statistics['approximate_average_duration'], 2),
+                                'specific_average_duration': round(statistics['specific_average_duration'], 2),
+                                'idle_time_per_cycle': round(statistics['idle_time_per_cycle'], 2),
+                                'min_duration': statistics['min_duration'],
+                                'max_duration': statistics['max_duration'],
+                                'std_deviation': round(statistics['std_deviation'], 2)
+                            }
+                        }
+                except Exception as e:
+                    print(f"Warning: Could not generate cycle analysis: {e}")
+            
+            response_data = {
                 'success': True,
                 'report': report,
                 'video_id': video_id,
                 'analyzer_type': 'gemini'
-            })
+            }
+            
+            if cycle_analysis:
+                response_data['cycle_analysis'] = cycle_analysis
+            
+            return jsonify(response_data)
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
