@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture Flowchart</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'neutral', // Options: 'default', 'forest', 'dark', 'neutral'
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true
+            }
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .diagram-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: auto; /* Allows scrolling if chart is huge */
+            max-width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Optional: Custom styling for specific node types could go here */
+    </style>
+</head>
+<body>
+
+    <h1>Video Analysis & Report Pipeline</h1>
+
+    <div class="diagram-container">
+        <pre class="mermaid">
+            flowchart TB
+                %% Theme customization for specific subgraphs
+                classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+                classDef webapp fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+                classDef pipeline fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+                
+                subgraph Frontend ["Web Interface (User)"]
+                    direction TB
+                    UI["Browser / UI"]
+                    InputVideo["Input: Video File/URL"]
+                    InputJoystick["Input: Joystick Data"]
+                    InputOperator["Input: Operator Info"]
+                end
+
+                subgraph WebApp ["Flask Application (app.py)"]
+                    API_Analyze["/api/analyze"]
+                    API_Report["/api/generate_html_report"]
+                    API_Full["/api/generate_html_report_from_video"]
+                end
+
+                subgraph VideoPipeline ["Video Analysis Pipeline (AgentOrchestrator)"]
+                    direction TB
+                    StartVideo["Start Analysis"]
+                    FrameExt["FrameExtractorAgent<br/>(Extract Frames)"]
+                    FrameClass["FrameClassifierAgent<br/>(Classify Content)"]
+                    ActionDet["ActionDetectorAgent<br/>(Detect Events)"]
+                    CycleAss["CycleAssemblerAgent<br/>(Assemble Cycles)"]
+                    ReportGen["ReportGeneratorAgent<br/>(Text Report)"]
+                    
+                    StartVideo --> FrameExt
+                    FrameExt --> FrameClass
+                    FrameClass --> ActionDet
+                    ActionDet --> CycleAss
+                    CycleAss --> ReportGen
+                end
+
+                subgraph ReportPipeline ["HTML Report Pipeline (ReportOrchestrator)"]
+                    direction TB
+                    StartReport["Start Report Gen"]
+                    CycleMetrics["CycleMetricsAgent<br/>(Calculate Metrics)"]
+                    JoyAnalytics["JoystickAnalyticsAgent<br/>(Process Stats)"]
+                    ChartAnalysis["ChartAnalysisAgent<br/>(Visual AI Analysis)"]
+                    PerfScore["PerformanceScoreAgent<br/>(Score Operator)"]
+                    InsightsGen["InsightsGeneratorAgent<br/>(AI Insights)"]
+                    HTMLAss["HTMLAssemblerAgent<br/>(Assemble HTML)"]
+
+                    StartReport --> CycleMetrics
+                    StartReport --> JoyAnalytics
+                    StartReport --> ChartAnalysis
+                    
+                    CycleMetrics --> PerfScore
+                    JoyAnalytics --> PerfScore
+                    
+                    CycleMetrics --> InsightsGen
+                    JoyAnalytics --> InsightsGen
+                    PerfScore --> InsightsGen
+                    
+                    CycleMetrics --> HTMLAss
+                    JoyAnalytics --> HTMLAss
+                    ChartAnalysis --> HTMLAss
+                    PerfScore --> HTMLAss
+                    InsightsGen --> HTMLAss
+                end
+
+                %% Connections
+                UI --> InputVideo
+                UI --> InputJoystick
+                UI --> InputOperator
+                
+                InputVideo --> API_Analyze
+                InputJoystick --> API_Report
+                InputOperator --> API_Report
+
+                API_Analyze --> StartVideo
+                API_Full --> StartVideo
+                
+                %% Data flow from Video to Report
+                ReportGen -- "Cycle Data" --> API_Full
+                API_Full -- "Cycle Data" --> StartReport
+                
+                API_Report --> StartReport
+
+                %% Final Outputs
+                ReportGen --> OutputText["Output: Text Report"]
+                HTMLAss --> OutputHTML["Output: HTML Training Report"]
+                
+                OutputText -.-> UI
+                OutputHTML -.-> UI
+
+                %% Apply Styles to Subgraphs (Optional visual polish)
+                class Frontend frontend
+                class WebApp webapp
+                class VideoPipeline,ReportPipeline pipeline
+        </pre>
+    </div>
+
+</body>
+</html>

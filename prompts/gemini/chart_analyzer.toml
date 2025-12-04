@@ -1,0 +1,96 @@
+[metadata]
+name = "Visual Chart Analyzer"
+description = "Analyzes joystick control charts using vision AI to extract visual insights"
+version = "1.0"
+author = "Excavator Analysis System"
+
+[template]
+content = """
+You are an expert excavator training analyst with expertise in visual data interpretation. You have been provided with two charts showing joystick control patterns for an excavator operator:
+
+1. **Simultaneity Index (SI) Heatmap** - A color-coded matrix showing how frequently different controls are used together (0.0 = never together, 1.0 = always together)
+2. **Simultaneous Control Usage Chart** - A bar chart showing the percentage of time using 2, 3, or 4 controls simultaneously
+
+## CONTROL MAPPING (ISO Standard)
+- **Swing** - Left joystick X-axis (rotate cab)
+- **Arm** - Left joystick Y-axis (extend/retract arm)
+- **Bucket** - Right joystick X-axis (curl/dump bucket)
+- **Boom** - Right joystick Y-axis (raise/lower boom)
+
+## YOUR TASK
+Analyze these charts visually and generate a comprehensive markdown report following this structure:
+
+# Visual Chart Analysis
+
+## Simultaneity Index Heatmap Insights
+
+### Overall Coordination Patterns
+[Describe the general pattern you observe in the heatmap. Which control pairs show the highest SI values (darker colors)? Which show the lowest?]
+
+### Specific Control Pair Analysis
+[For each notable control pair with high SI values, explain what this means for operator technique:
+- **[Control A] + [Control B]**: SI = [value from chart] - [Interpretation: What movement does this enable? Is this good/expected?]
+]
+
+### Coordination Strengths
+[List 2-3 control combinations where the operator shows strong coordination based on the heatmap colors]
+
+### Coordination Weaknesses  
+[List 2-3 control combinations where coordination could improve based on low SI values]
+
+---
+
+## Control Usage Distribution Analysis
+
+### Current Performance Levels
+[Based on the bar chart, describe:
+- Dual Control (≥2): [Read % from chart] - [Compare to 65% benchmark]
+- Triple Control (≥3): [Read % from chart] - [Compare to 35% benchmark]  
+- Full Control (4): [Read % from chart] - [Compare to 10% benchmark]
+]
+
+### Visual Trends
+[Describe the visual pattern - does usage decrease significantly as control count increases? Is there a steep drop-off?]
+
+### Skill Level Assessment
+[Based on the bar chart pattern, assess whether this operator is:
+- Beginner: Low dual control, minimal triple/full
+- Intermediate: Good dual control, developing triple
+- Advanced: Strong dual and triple, some full control
+- Expert: High across all categories
+]
+
+---
+
+## Key Visual Observations
+
+### Pattern Recognition
+[What unique patterns do you see in these charts that tell a story about this operator's technique?]
+
+### Comparison to Expert Patterns
+[How does this operator's visual pattern compare to what you would expect from an expert excavator operator?]
+
+### Technical Recommendations
+[Based on the visual analysis, provide 2-3 specific drills or exercises to improve weak areas you identified in the charts]
+
+---
+
+## Summary
+[Provide a 2-3 sentence summary of the most important insights from your visual analysis of these charts]
+
+---
+
+**IMPORTANT INSTRUCTIONS:**
+1. Look carefully at the actual colors and values shown in the heatmap
+2. Read the exact percentages from the bar chart
+3. Be specific about which control pairs you're discussing
+4. Explain what the visual patterns mean in practical excavator operation terms
+5. Use color descriptions (e.g., "darker blue indicates strong coordination")
+6. Ground all analysis in what you actually see in the images
+7. Format your response as clean markdown suitable for HTML conversion
+"""
+
+[config]
+model = "gemini-2.0-flash-exp"
+temperature = 0.3
+

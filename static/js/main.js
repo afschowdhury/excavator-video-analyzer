@@ -12,7 +12,10 @@ let state = {
     videoUrl: '',
     videoPath: '',
     videoId: null,
-    isAnalyzing: false
+    isAnalyzing: false,
+    timeRangeMode: 'whole',
+    startOffset: '',
+    endOffset: ''
 };
 
 // DOM elements
@@ -27,6 +30,10 @@ const promptSelect = document.getElementById('prompt-select');
 const promptDescription = document.getElementById('prompt-description');
 const cycleModeGroup = document.getElementById('cycle-mode-group');
 const cycleModeSelect = document.getElementById('cycle-mode-select');
+const timeRangeGroup = document.getElementById('time-range-group');
+const timeInputsDiv = document.getElementById('time-inputs');
+const startTimeInput = document.getElementById('start-time');
+const endTimeInput = document.getElementById('end-time');
 const videoSourceSelect = document.getElementById('video-source');
 const urlGroup = document.getElementById('url-group');
 const localGroup = document.getElementById('local-group');
@@ -44,6 +51,7 @@ const presetGrid = document.getElementById('preset-grid');
 document.addEventListener('DOMContentLoaded', () => {
     loadPrompts();
     setupEventListeners();
+    updateUIForAnalyzer(); // Initialize UI state for default analyzer
 });
 
 // Load available prompts from API
@@ -105,6 +113,25 @@ function setupEventListeners() {
     // Cycle mode selection
     cycleModeSelect.addEventListener('change', (e) => {
         state.cycleMode = e.target.value;
+    });
+
+    // Time range mode selection
+    const timeRangeModeRadios = document.querySelectorAll('input[name="time-range-mode"]');
+    timeRangeModeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            state.timeRangeMode = e.target.value;
+            updateTimeRangeUI();
+        });
+    });
+
+    // Start time input
+    startTimeInput.addEventListener('input', (e) => {
+        state.startOffset = e.target.value.trim();
+    });
+
+    // End time input
+    endTimeInput.addEventListener('input', (e) => {
+        state.endOffset = e.target.value.trim();
     });
 
     // Video source selection
@@ -191,6 +218,7 @@ function updateUIForAnalyzer() {
     if (state.analyzerType === 'gpt5') {
         gpt5Config.classList.remove('hidden');
         promptGroup.classList.add('hidden');
+        timeRangeGroup.classList.add('hidden');
         // GPT-5 needs local video
         if (state.videoSource === 'url') {
             state.videoSource = 'local';
@@ -200,7 +228,82 @@ function updateUIForAnalyzer() {
     } else {
         gpt5Config.classList.add('hidden');
         promptGroup.classList.remove('hidden');
+        timeRangeGroup.classList.remove('hidden');
     }
+}
+
+// Update time range UI based on mode
+function updateTimeRangeUI() {
+    if (state.timeRangeMode === 'custom') {
+        timeInputsDiv.classList.remove('hidden');
+        startTimeInput.disabled = false;
+        endTimeInput.disabled = false;
+    } else {
+        timeInputsDiv.classList.add('hidden');
+        startTimeInput.disabled = true;
+        endTimeInput.disabled = true;
+        state.startOffset = '';
+        state.endOffset = '';
+    }
+}
+
+// Parse time input to API format (e.g., "120s")
+function parseTimeToSeconds(timeStr) {
+    if (!timeStr) return null;
+    
+    // Check if it's in MM:SS format
+    if (timeStr.includes(':')) {
+        const parts = timeStr.split(':');
+        if (parts.length === 2) {
+            const minutes = parseInt(parts[0]);
+            const seconds = parseInt(parts[1]);
+            if (!isNaN(minutes) && !isNaN(seconds)) {
+                return `${minutes * 60 + seconds}s`;
+            }
+        }
+    }
+    
+    // Otherwise, treat as seconds
+    const seconds = parseInt(timeStr);
+    if (!isNaN(seconds) && seconds >= 0) {
+        return `${seconds}s`;
+    }
+    
+    return null;
+}
+
+// Validate time range
+function validateTimeRange() {
+    if (state.timeRangeMode === 'whole') {
+        return { valid: true };
+    }
+    
+    const startSeconds = parseTimeToSeconds(state.startOffset);
+    const endSeconds = parseTimeToSeconds(state.endOffset);
+    
+    // If both are empty, that's fine (will use defaults)
+    if (!state.startOffset && !state.endOffset) {
+        return { valid: true };
+    }
+    
+    // If one is specified, validate format
+    if (state.startOffset && !startSeconds) {
+        return { valid: false, message: 'Invalid start time format' };
+    }
+    if (state.endOffset && !endSeconds) {
+        return { valid: false, message: 'Invalid end time format' };
+    }
+    
+    // If both specified, ensure end > start
+    if (startSeconds && endSeconds) {
+        const startVal = parseInt(startSeconds);
+        const endVal = parseInt(endSeconds);
+        if (endVal <= startVal) {
+            return { valid: false, message: 'End time must be greater than start time' };
+        }
+    }
+    
+    return { valid: true };
 }
 
 // Update video source UI
@@ -308,6 +411,15 @@ async function handleAnalyze() {
     `;
     
     try {
+        // Validate time range if using Gemini
+        if (state.analyzerType === 'gemini') {
+            const timeValidation = validateTimeRange();
+            if (!timeValidation.valid) {
+                showError(timeValidation.message);
+                return;
+            }
+        }
+        
         // Build request body based on analyzer type
         const requestBody = {
             analyzer_type: state.analyzerType
@@ -322,6 +434,20 @@ async function handleAnalyze() {
             requestBody.video_url = state.videoUrl;
             requestBody.prompt_type = state.selectedPrompt;
             requestBody.cycle_mode = state.cycleMode;
+            
+            // Add time range parameters
+            if (state.timeRangeMode === 'whole') {
+                // Explicitly set to null to analyze full video
+                requestBody.use_full_video = true;
+            } else if (state.timeRangeMode === 'custom') {
+                // Use custom values if provided
+                if (state.startOffset) {
+                    requestBody.start_offset = parseTimeToSeconds(state.startOffset);
+                }
+                if (state.endOffset) {
+                    requestBody.end_offset = parseTimeToSeconds(state.endOffset);
+                }
+            }
         }
 
         const response = await fetch('/api/analyze', {
@@ -469,6 +595,15 @@ async function handleGenerateReport() {
     `;
     
     try {
+        // Validate time range if using Gemini
+        if (state.analyzerType === 'gemini') {
+            const timeValidation = validateTimeRange();
+            if (!timeValidation.valid) {
+                showError(timeValidation.message);
+                return;
+            }
+        }
+        
         // Build request body  - use the same video analysis endpoint with generate_html_report flag
         const requestBody = {
             analyzer_type: state.analyzerType,
@@ -485,6 +620,20 @@ async function handleGenerateReport() {
             requestBody.video_url = state.videoUrl;
             requestBody.prompt_type = state.selectedPrompt;
             requestBody.cycle_mode = state.cycleMode;
+            
+            // Add time range parameters
+            if (state.timeRangeMode === 'whole') {
+                // Explicitly set to null to analyze full video
+                requestBody.use_full_video = true;
+            } else if (state.timeRangeMode === 'custom') {
+                // Use custom values if provided
+                if (state.startOffset) {
+                    requestBody.start_offset = parseTimeToSeconds(state.startOffset);
+                }
+                if (state.endOffset) {
+                    requestBody.end_offset = parseTimeToSeconds(state.endOffset);
+                }
+            }
         }
 
         const response = await fetch('/api/analyze', {

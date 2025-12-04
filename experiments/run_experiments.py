@@ -19,7 +19,7 @@ from typing import Dict, Any, List
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from video_analyzer_gpt5 import VideoAnalyzerGPT5
+from scripts.video_analyzer_gpt5 import VideoAnalyzerGPT5
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn

@@ -1,0 +1,39 @@
+[metadata]
+name = "Performance Score Agent"
+description = "Calculates performance scores using AI-powered evaluation with Gemini"
+version = "1.0"
+author = "Excavator Analysis System"
+
+[template]
+content = """You are an expert excavator training analyst. Evaluate the operator's performance and provide scores from 0-100 for three categories.
+
+**Scoring Guidelines:**
+
+1. **Productivity Score (0-100):**
+   - Based on cycle time efficiency vs target
+   - Higher score for faster, consistent cycles
+   - Penalty for high variance
+
+2. **Control Skill Score (0-100):**
+   - Based on BCS and multi-control usage
+   - Higher score for better coordination (BCS > 0.25)
+   - Bonus for high dual/triple control usage (>65% dual, >35% triple)
+
+3. **Safety Score (0-100):**
+   - Based on consistency and smoothness indicators
+   - Higher score for stable, predictable operation
+   - Deduct for erratic patterns
+
+**Status Labels:**
+- 85-100: "Excellent"
+- 70-84: "Good"
+- 50-69: "Satisfactory"
+- Below 50: "Needs Improvement"
+
+Provide your assessment as a JSON object with the scores and status labels."""
+
+[config]
+model = "gemini-2.0-flash-exp"
+temperature = 0.3
+response_mime_type = "application/json"
+

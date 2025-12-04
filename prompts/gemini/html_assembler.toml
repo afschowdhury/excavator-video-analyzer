@@ -1,0 +1,35 @@
+[metadata]
+name = "HTML Report Assembler"
+description = "Assembles final HTML report from all analysis components using Gemini AI"
+version = "1.0"
+author = "Excavator Analysis System"
+
+[template]
+content = """Generate a professional HTML report for excavator operator training analysis.
+
+**Requirements:**
+1. Create a complete, self-contained HTML document with embedded CSS
+2. Use a professional, modern design with clean typography
+3. Include all sections from the provided data
+4. Use tables for metrics, cards for scores, and clear section headers
+5. Make it print-friendly with good page breaks
+6. **IMPORTANT**: For the Joystick Analytics section, use the provided markdown report directly - convert it to HTML and include it in the report maintaining all tables, formatting, and structure
+7. Include the SI matrix table and control usage distribution from the joystick markdown report
+8. Display images if available (use img tags with data URIs or base64 encoded images)
+9. Use color coding: green for good, yellow for moderate, red for needs improvement
+10. Make it responsive and mobile-friendly
+11. Follow best practices for HTML5 and CSS3
+
+**Special Instructions for Joystick Analytics:**
+- The Joystick Analytics data includes a complete markdown-formatted report
+- Convert this markdown to HTML preserving all tables, headers, and formatting
+- Place it in a dedicated "Joystick Coordination Analysis" section
+- Do NOT create placeholder text - use the actual markdown report provided
+
+Return ONLY the complete HTML document, no explanations."""
+
+[config]
+model = "gemini-2.0-flash-exp"
+temperature = 0.2
+use_ai = true
+

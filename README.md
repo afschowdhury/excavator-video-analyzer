@@ -52,23 +52,93 @@ Then open your browser and navigate to `http://localhost:5000`
 
 ### Command Line Interface
 
-Run the analyzer script from your terminal:
+Run the analyzer scripts from your terminal:
 
 ```bash
-python video_analyzer.py
+# GPT-5 based video analysis
+python scripts/video_analyzer_gpt5.py
+
+# HTML report generation
+python scripts/html_report_analyzer.py
+
+# Cycle time analysis
+python scripts/cycle_time_analyzer.py
 ```
 
-- The script will prompt the Gemini model to analyze a sample video and display the report in your terminal.
-- Reports are saved in the `reports/` directory by default.
-- You can customize the video URL and prompt type by editing the `main()` function in `video_analyzer.py`.
+- Scripts analyze videos and generate reports
+- Reports are saved in the `reports/` directory by default
+- See `scripts/README.md` for more details
+
+## Project Structure
+
+```
+excavator-video-analyzer/
+├── agents/                      # Multi-agent system
+│   ├── base_agent.py           # Base agent class
+│   ├── gpt/                    # OpenAI GPT agents
+│   │   ├── frame_classifier.py # Frame classification
+│   │   └── report_generator.py # Report generation
+│   ├── gemini/                 # Google Gemini agents
+│   │   ├── html_assembler_agent.py
+│   │   ├── insights_generator_agent.py
+│   │   └── performance_score_agent.py
+│   └── core/                   # Non-LLM logic agents
+│       ├── action_detector.py
+│       ├── cycle_assembler.py
+│       ├── cycle_metrics_agent.py
+│       ├── frame_extractor.py
+│       ├── joystick_analytics_agent.py
+│       ├── orchestrator.py
+│       └── report_orchestrator_agent.py
+├── prompts/                    # Prompt templates
+│   ├── gpt/                    # GPT model prompts
+│   │   ├── frame_classifier.toml
+│   │   └── report_generator.toml
+│   ├── gemini/                 # Gemini model prompts
+│   │   ├── html_assembler.toml
+│   │   ├── insights_generator.toml
+│   │   └── performance_score.toml
+│   └── *.toml                  # Other prompt templates
+├── docs/                       # User-facing documentation
+│   ├── QUICKSTART_GPT5.md
+│   ├── QUICKSTART_HTML_REPORT.md
+│   └── ...
+├── implementation_details/     # Technical documentation
+│   ├── IMPLEMENTATION_SUMMARY.md
+│   └── ...
+├── scripts/                    # Analysis and utility scripts
+│   ├── video_analyzer_gpt5.py
+│   ├── html_report_analyzer.py
+│   ├── cycle_time_analyzer.py
+│   └── report_saver.py
+├── tests/                      # Test files
+│   ├── test_cycle_analyzer.py
+│   ├── test_html_report.py
+│   └── ...
+├── data/                       # Sample data and videos
+├── reports/                    # Generated reports
+├── experiments/                # Experimental notebooks and scripts
+├── static/                     # Web UI assets
+├── templates/                  # Web UI templates
+├── app.py                      # Flask web application
+├── prompts.py                  # Prompt management
+├── config.py                   # Configuration
+└── requirements.txt            # Dependencies
+```
 
 ## Configuration
 
 - **Prompt Templates:**
-  - Located in the `prompt_templates/` directory as TOML files (e.g., `simple.toml`, `detailed.toml`).
+  - Located in the `prompts/` directory as TOML files organized by model type (`prompts/gpt/`, `prompts/gemini/`).
+  - Each TOML file contains the prompt content, model configuration (temperature, max_tokens, etc.), and metadata.
   - You can add or modify templates to change the analysis style.
 - **Reports Directory:**
   - By default, reports are saved in the `reports/` folder. You can change this in the `VideoAnalyzer` constructor.
+
+## Documentation
+
+- **[docs/](docs/)** - User guides and quick start documentation
+- **[implementation_details/](implementation_details/)** - Technical implementation notes and design decisions
 
 ## Example Output
 

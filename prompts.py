@@ -26,7 +26,7 @@ class PromptTemplate:
 class PromptManager:
     """Manages different prompt templates for video analysis"""
 
-    def __init__(self, templates_dir="prompt_templates"):
+    def __init__(self, templates_dir="prompts"):
         """
         Initialize the PromptManager with templates directory
 

@@ -92,6 +92,46 @@
                         <p class="description">Simple mode uses pure statistics. AI mode generates insights using Gemini Flash.</p>
                     </div>
 
+                    <!-- Video Time Range (for Gemini) -->
+                    <div class="form-group hidden" id="time-range-group">
+                        <label>Video Time Range</label>
+                        <div class="time-range-mode">
+                            <label class="radio-label">
+                                <input type="radio" name="time-range-mode" value="whole" checked>
+                                <span>Whole Video</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="time-range-mode" value="custom">
+                                <span>Custom Time Range</span>
+                            </label>
+                        </div>
+                        <div class="time-inputs hidden" id="time-inputs">
+                            <div class="time-input-row">
+                                <div class="time-input-field">
+                                    <label for="start-time">Start Time</label>
+                                    <input 
+                                        type="text" 
+                                        id="start-time" 
+                                        class="form-control" 
+                                        placeholder="0 or 0:00"
+                                        disabled
+                                    >
+                                </div>
+                                <div class="time-input-field">
+                                    <label for="end-time">End Time</label>
+                                    <input 
+                                        type="text" 
+                                        id="end-time" 
+                                        class="form-control" 
+                                        placeholder="120 or 2:00"
+                                        disabled
+                                    >
+                                </div>
+                            </div>
+                            <p class="description">Enter time in seconds (e.g., 30, 120) or MM:SS format (e.g., 0:30, 2:00)</p>
+                        </div>
+                    </div>
+
                     <!-- Video Source Selection -->
                     <div class="form-group">
                         <label for="video-source">Video Source</label>

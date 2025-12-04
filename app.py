@@ -7,10 +7,10 @@ import re
 from flask import Flask, jsonify, make_response, render_template, request
 
 from config import ANALYZER_TYPES, APP_CONFIG, GPT5_CONFIG, LOCAL_VIDEOS, PRESET_VIDEOS
-from cycle_time_analyzer import CycleTimeAnalyzer
-from html_report_analyzer import HTMLReportAnalyzer
-from video_analyzer import VideoAnalyzer
-from video_analyzer_gpt5 import VideoAnalyzerGPT5
+from scripts.cycle_time_analyzer import CycleTimeAnalyzer
+from scripts.html_report_analyzer import HTMLReportAnalyzer
+from scripts.video_analyzer import VideoAnalyzer
+from scripts.video_analyzer_gpt5 import VideoAnalyzerGPT5
 
 app = Flask(__name__)
 
@@ -184,17 +184,34 @@ def analyze_video():
             # Get cycle mode (default to 'simple')
             cycle_mode = data.get('cycle_mode', 'simple')
             
+            # Get time range parameters (optional)
+            use_full_video = data.get('use_full_video', False)
+            start_offset = data.get('start_offset')
+            end_offset = data.get('end_offset')
+            
             # Validate video URL
             video_id = extract_video_id(video_url)
             if not video_id:
                 return jsonify({'error': 'Invalid YouTube URL'}), 400
             
             # Generate report (without saving to file)
-            report = analyzer_gemini.generate_report(
-                video_url=video_url,
-                prompt_type=prompt_type,
-                save_to_file=False
-            )
+            # If use_full_video is True, pass empty strings to override config defaults
+            if use_full_video:
+                report = analyzer_gemini.generate_report(
+                    video_url=video_url,
+                    prompt_type=prompt_type,
+                    save_to_file=False,
+                    video_metadata_start_offset='',
+                    video_metadata_end_offset=''
+                )
+            else:
+                report = analyzer_gemini.generate_report(
+                    video_url=video_url,
+                    prompt_type=prompt_type,
+                    save_to_file=False,
+                    video_metadata_start_offset=start_offset,
+                    video_metadata_end_offset=end_offset
+                )
             
             if report is None:
                 return jsonify({'error': 'Failed to generate report'}), 500
@@ -383,15 +400,32 @@ def generate_html_report_from_video():
         joystick_data_path = data.get('joystick_data_path', 'data/joystick_data')
         operator_info = data.get('operator_info', {})
         
+        # Get time range parameters (optional)
+        use_full_video = data.get('use_full_video', False)
+        start_offset = data.get('start_offset')
+        end_offset = data.get('end_offset')
+        
         if not video_url:
             return jsonify({'error': 'video_url is required'}), 400
         
         # First, analyze the video to get cycle data
-        report = analyzer_gemini.generate_report(
-            video_url=video_url,
-            prompt_type=prompt_type,
-            save_to_file=False
-        )
+        # If use_full_video is True, pass empty strings to override config defaults
+        if use_full_video:
+            report = analyzer_gemini.generate_report(
+                video_url=video_url,
+                prompt_type=prompt_type,
+                save_to_file=False,
+                video_metadata_start_offset='',
+                video_metadata_end_offset=''
+            )
+        else:
+            report = analyzer_gemini.generate_report(
+                video_url=video_url,
+                prompt_type=prompt_type,
+                save_to_file=False,
+                video_metadata_start_offset=start_offset,
+                video_metadata_end_offset=end_offset
+            )
         
         if report is None:
             return jsonify({'error': 'Failed to analyze video'}), 500
