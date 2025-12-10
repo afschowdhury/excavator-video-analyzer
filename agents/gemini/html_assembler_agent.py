@@ -67,6 +67,7 @@ class HTMLAssemblerAgent(BaseAgent):
         """Prepare and enrich data for the template"""
         
         cycle_metrics = data.get("cycle_metrics", {})
+        simulation_metrics = data.get("simulation_metrics", {})
         joystick_analytics = data.get("joystick_analytics", {})
         chart_analysis = data.get("chart_analysis", {})
         insights = data.get("insights", {})
@@ -99,6 +100,18 @@ class HTMLAssemblerAgent(BaseAgent):
         if 'chart_analysis_markdown' in enriched_chart:
             enriched_chart['chart_analysis_html'] = self._markdown_to_html(enriched_chart['chart_analysis_markdown'])
 
+        # Simulation Metrics - format for display
+        enriched_simulation = None
+        if simulation_metrics and simulation_metrics.get('found'):
+            enriched_simulation = {
+                'found': True,
+                'video_id': simulation_metrics.get('video_id', 'Unknown'),
+                'productivity': simulation_metrics.get('productivity'),
+                'fuel_burned': simulation_metrics.get('fuel_burned'),
+                'time_swinging_left': simulation_metrics.get('time_swinging_left'),
+                'time_swinging_right': simulation_metrics.get('time_swinging_right'),
+            }
+
         return {
             'operator_name': operator_name,
             'equipment': equipment,
@@ -106,6 +119,7 @@ class HTMLAssemblerAgent(BaseAgent):
             'session_duration': session_duration,
             'generated_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             'cycle_metrics': enriched_cycle_metrics,
+            'simulation_metrics': enriched_simulation,
             'joystick_analytics': joystick_analytics,
             'chart_analysis': enriched_chart,
             'insights': insights,

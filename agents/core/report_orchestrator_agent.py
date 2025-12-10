@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from rich.console import Console
 
 from ..core.cycle_metrics_agent import CycleMetricsAgent
+from ..core.simulation_report_agent import SimulationReportAgent
 from ..gemini.chart_analysis_agent import ChartAnalysisAgent
 from ..gemini.html_assembler_agent import HTMLAssemblerAgent
 from ..gemini.insights_generator_agent import InsightsGeneratorAgent
@@ -27,6 +28,9 @@ class ReportOrchestrator:
         # Initialize agents
         self.cycle_metrics_agent = CycleMetricsAgent(
             config=self.config.get("cycle_metrics", {})
+        )
+        self.simulation_report_agent = SimulationReportAgent(
+            config=self.config.get("simulation_report", {})
         )
         self.joystick_analytics_agent = JoystickAnalyticsAgent(
             config=self.config.get("joystick_analytics", {})
@@ -76,7 +80,7 @@ class ReportOrchestrator:
             # Stage 1: Calculate Cycle Metrics
             if progress_callback:
                 progress_callback("Calculating cycle metrics...", 0)
-            self.console.print("\n[bold cyan]━━━ Stage 1/5: Cycle Metrics Calculation ━━━[/bold cyan]")
+            self.console.print("\n[bold cyan]━━━ Stage 1/6: Cycle Metrics Calculation ━━━[/bold cyan]")
             cycle_metrics = self.cycle_metrics_agent.process(cycle_data)
             self.pipeline_data["cycle_metrics"] = cycle_metrics
             self.console.print(
@@ -86,9 +90,28 @@ class ReportOrchestrator:
             # Prepare context with trial_id for agents
             agent_context = {"trial_id": trial_id} if trial_id else None
 
+            # Stage 1.5: Extract Simulation Metrics
+            if progress_callback:
+                progress_callback("Extracting simulation metrics...", 10)
+            self.console.print(f"[bold cyan]━━━ Stage 1.5/6: Simulation Metrics Extraction ━━━[/bold cyan]")
+            # Pass trial_id directly as input if available, otherwise None
+            simulation_input = trial_id if trial_id else None
+            simulation_metrics = self.simulation_report_agent.process(
+                simulation_input, context=agent_context
+            )
+            self.pipeline_data["simulation_metrics"] = simulation_metrics
+            if simulation_metrics.get('found'):
+                self.console.print(
+                    f"[green]✓[/green] Extracted simulation metrics for ID: {simulation_metrics.get('video_id')}\n"
+                )
+            else:
+                self.console.print(
+                    f"[yellow]⚠[/yellow] No simulation report found for this trial\n"
+                )
+
             # Stage 2: Process Joystick Analytics
             if progress_callback:
-                progress_callback("Processing joystick analytics...", 15)
+                progress_callback("Processing joystick analytics...", 20)
             self.console.print(f"[bold cyan]━━━ Stage 2/6: Joystick Analytics ━━━[/bold cyan]")
             joystick_analytics = self.joystick_analytics_agent.process(
                 joystick_data_path, context=agent_context
@@ -98,7 +121,7 @@ class ReportOrchestrator:
 
             # Stage 3: Analyze Charts Visually
             if progress_callback:
-                progress_callback("Analyzing charts with vision AI...", 30)
+                progress_callback("Analyzing charts with vision AI...", 40)
             self.console.print(f"[bold cyan]━━━ Stage 3/6: Visual Chart Analysis ━━━[/bold cyan]")
             chart_analysis = self.chart_analysis_agent.process(
                 joystick_data_path, context=agent_context
@@ -109,7 +132,7 @@ class ReportOrchestrator:
             # Stage 4: Generate AI Insights
             if progress_callback:
                 progress_callback("Generating AI insights...", 60)
-            self.console.print(f"[bold cyan]━━━ Stage 4/5: AI Insights Generation ━━━[/bold cyan]")
+            self.console.print(f"[bold cyan]━━━ Stage 4/6: AI Insights Generation ━━━[/bold cyan]")
             insights_input = {
                 "cycle_metrics": cycle_metrics,
                 "joystick_analytics": joystick_analytics,
@@ -122,9 +145,10 @@ class ReportOrchestrator:
             # Stage 5: Assemble HTML Report
             if progress_callback:
                 progress_callback("Assembling HTML report...", 80)
-            self.console.print(f"[bold cyan]━━━ Stage 5/5: HTML Report Assembly ━━━[/bold cyan]")
+            self.console.print(f"[bold cyan]━━━ Stage 5/6: HTML Report Assembly ━━━[/bold cyan]")
             assembly_input = {
                 "cycle_metrics": cycle_metrics,
+                "simulation_metrics": simulation_metrics,
                 "joystick_analytics": joystick_analytics,
                 "chart_analysis": chart_analysis,
                 "insights": insights,
@@ -146,6 +170,7 @@ class ReportOrchestrator:
             return {
                 "html_report": html_report,
                 "cycle_metrics": cycle_metrics,
+                "simulation_metrics": simulation_metrics,
                 "joystick_analytics": joystick_analytics,
                 "chart_analysis": chart_analysis,
                 "insights": insights,

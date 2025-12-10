@@ -31,6 +31,7 @@ class SimulationReportAgent(BaseAgent):
         Returns:
             Dictionary containing extracted metrics:
             {
+                'productivity': float (in m³/hr),
                 'fuel_burned': float (in L),
                 'time_swinging_left': float (in sec),
                 'time_swinging_right': float (in sec),
@@ -61,7 +62,8 @@ class SimulationReportAgent(BaseAgent):
             metrics['found'] = True
             metrics['video_id'] = video_id
             self.log(
-                f"✓ Extracted metrics: Fuel={metrics.get('fuel_burned', 'N/A')}L, "
+                f"✓ Extracted metrics: Productivity={metrics.get('productivity', 'N/A')}m³/hr, "
+                f"Fuel={metrics.get('fuel_burned', 'N/A')}L, "
                 f"Left={metrics.get('time_swinging_left', 'N/A')}s, "
                 f"Right={metrics.get('time_swinging_right', 'N/A')}s",
                 "success"
@@ -99,7 +101,7 @@ class SimulationReportAgent(BaseAgent):
 
     def _extract_metrics_from_pdf(self, pdf_path: Path) -> Dict[str, Any]:
         """
-        Extract fuel and swing time metrics from PDF
+        Extract fuel, swing time, and productivity metrics from PDF
 
         Args:
             pdf_path: Path to PDF file
@@ -115,6 +117,12 @@ class SimulationReportAgent(BaseAgent):
 
         # Extract metrics using regex patterns
         metrics = {}
+
+        # Pattern for "Productivity" - format: "Productivity 585.66 m³/hr"
+        productivity_pattern = r'Productivity\s+([\d.]+)\s+m³/hr'
+        productivity_match = re.search(productivity_pattern, text)
+        if productivity_match:
+            metrics['productivity'] = float(productivity_match.group(1))
 
         # Pattern for "Fuel Burned" - format: "Fuel Burned 1.41 L"
         fuel_pattern = r'Fuel Burned\s+([\d.]+)\s+L'
@@ -186,6 +194,7 @@ class SimulationReportAgent(BaseAgent):
             Dictionary with None values and found=False
         """
         return {
+            'productivity': None,
             'fuel_burned': None,
             'time_swinging_left': None,
             'time_swinging_right': None,

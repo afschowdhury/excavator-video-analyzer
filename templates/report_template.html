@@ -124,6 +124,55 @@
             display: inline-block;
         }
         
+        .simulation-metrics {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .simulation-metrics h2 {
+            color: white;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            margin: 0 0 20px 0;
+        }
+        
+        .simulation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .sim-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sim-card h4 {
+            color: #555;
+            font-size: 0.9em;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .sim-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 5px 0;
+        }
+        
+        .sim-unit {
+            font-size: 0.85em;
+            color: #888;
+        }
+        
         .metrics-table {
             width: 100%;
             border-collapse: collapse;
@@ -266,6 +315,62 @@
                 <tr><th>Analysis System:</th><td>Gemini 2.5 Pro Multi-Agent System</td></tr>
             </table>
         </section>
+
+        <!-- Simulation Performance Metrics -->
+        {% if simulation_metrics and simulation_metrics.found %}
+        <section class="simulation-metrics">
+            <h2>🎯 SIMULATION PERFORMANCE METRICS</h2>
+            <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 15px;">
+                <strong>Report ID:</strong> {{ simulation_metrics.video_id }}
+            </p>
+            <div class="simulation-cards">
+                <div class="sim-card">
+                    <h4>Productivity</h4>
+                    <div class="sim-value">
+                        {% if simulation_metrics.productivity %}
+                            {{ simulation_metrics.productivity|round(2) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="sim-unit">m³/hr</div>
+                </div>
+                <div class="sim-card">
+                    <h4>Fuel Burned</h4>
+                    <div class="sim-value">
+                        {% if simulation_metrics.fuel_burned %}
+                            {{ simulation_metrics.fuel_burned|round(2) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="sim-unit">Liters</div>
+                </div>
+                <div class="sim-card">
+                    <h4>Swinging Left</h4>
+                    <div class="sim-value">
+                        {% if simulation_metrics.time_swinging_left %}
+                            {{ simulation_metrics.time_swinging_left|round(1) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="sim-unit">seconds</div>
+                </div>
+                <div class="sim-card">
+                    <h4>Swinging Right</h4>
+                    <div class="sim-value">
+                        {% if simulation_metrics.time_swinging_right %}
+                            {{ simulation_metrics.time_swinging_right|round(1) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="sim-unit">seconds</div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
 
         <!-- Executive Summary -->
         <section class="executive-summary">
