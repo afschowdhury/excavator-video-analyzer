@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operator Training Report - Test Operator B8</title>
+    <title>Operator Training Report - {{ operator_name }}</title>
     <style>
         * {
             margin: 0;
@@ -259,10 +259,10 @@
 
         <section class="metadata">
             <table class="info-table">
-                <tr><th>Operator Name:</th><td>Test Operator B8</td></tr>
-                <tr><th>Equipment:</th><td>Excavator CAT 320</td></tr>
-                <tr><th>Exercise Date:</th><td>2025-12-10</td></tr>
-                <tr><th>Session Duration:</th><td>2 minutes 20 seconds</td></tr>
+                <tr><th>Operator Name:</th><td>{{ operator_name }}</td></tr>
+                <tr><th>Equipment:</th><td>{{ equipment }}</td></tr>
+                <tr><th>Exercise Date:</th><td>{{ exercise_date }}</td></tr>
+                <tr><th>Session Duration:</th><td>{{ session_duration }}</td></tr>
                 <tr><th>Analysis System:</th><td>Gemini 2.5 Pro Multi-Agent System</td></tr>
             </table>
         </section>
@@ -270,28 +270,16 @@
         <!-- Executive Summary -->
         <section class="executive-summary">
             <h2>1. EXECUTIVE SUMMARY</h2>
-            <div class="score-cards">
-                <div class="score-card">
-                    <h3>PRODUCTIVITY</h3>
-                    <div class="score excellent">95/100</div>
-                    <div class="status">Excellent</div>
-                </div>
-                <div class="score-card">
-                    <h3>CONTROL SKILL</h3>
-                    <div class="score needs-improvement">0/100</div>
-                    <div class="status">Needs Improvement</div>
-                </div>
-                <div class="score-card">
-                    <h3>SAFETY</h3>
-                    <div class="score good">75/100</div>
-                    <div class="status">Good</div>
-                </div>
-            </div>
             <p class="summary-text">
                 This report provides comprehensive analysis of operator performance including productivity metrics, 
                 advanced control coordination analytics, and safety compliance. Key findings and recommendations 
                 are highlighted throughout.
             </p>
+            
+            <div class="analysis-summary">
+                <h3>Overall Assessment</h3>
+                <p>{{ insights.overall_assessment }}</p>
+            </div>
         </section>
 
         <!-- Performance Metrics -->
@@ -310,25 +298,25 @@
                 <tbody>
                     <tr>
                         <td>Average Cycle Time</td>
-                        <td>19s</td>
-                        <td>20.0s</td>
-                        <td class="good">Above Target</td>
+                        <td>{{ cycle_metrics.average_cycle_time }}s</td>
+                        <td>{{ cycle_metrics.target_cycle_time }}s</td>
+                        <td class="{{ cycle_metrics.performance_class }}">{{ cycle_metrics.performance_text }}</td>
                     </tr>
                     <tr>
                         <td>Cycle Time Variance</td>
-                        <td>2.5</td>
+                        <td>{{ cycle_metrics.variance|round(2) }}</td>
                         <td>&lt;15%</td>
-                        <td>Excellent</td>
+                        <td>{{ cycle_metrics.variance_status }}</td>
                     </tr>
                     <tr>
                         <td>Consistency Score</td>
-                        <td>91.7%</td>
+                        <td>{{ cycle_metrics.consistency_score|round(1) }}%</td>
                         <td>&gt;70%</td>
-                        <td class="excellent">Excellent</td>
+                        <td class="{{ cycle_metrics.consistency_class }}">{{ cycle_metrics.consistency_status }}</td>
                     </tr>
                     <tr>
                         <td>Cycle Time Trend</td>
-                        <td colspan="3">Stable</td>
+                        <td colspan="3">{{ cycle_metrics.cycle_time_trend }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -338,53 +326,99 @@
         <section class="control-analytics">
             <h2>3. ADVANCED CONTROL ANALYTICS</h2>
             <!-- Joystick Analysis Content -->
-            
+            {% if joystick_analytics.html_report %}
                 <div class="markdown-content">
-                    <div class="joystick-analysis">
-    <h3>Error</h3>
-    <p>Unable to load joystick telemetry data. Please ensure stats.json file exists and is properly formatted.</p>
-</div>
+                    {{ joystick_analytics.html_report | safe }}
                 </div>
-            
+            {% else %}
+                <p>No joystick analytics available.</p>
+            {% endif %}
         </section>
 
         <!-- Visual Chart Analysis -->
         <section class="visual-analysis">
             <h2>4. VISUAL CHART ANALYSIS</h2>
             <div class="charts-container">
+                {% if chart_analysis.heatmap_image_base64 %}
+                <div class="chart-wrapper">
+                    <h4>Simultaneity Index (SI) Heatmap</h4>
+                    <img src="{{ chart_analysis.heatmap_image_base64 }}" 
+                         alt="SI Heatmap showing control coordination patterns" 
+                         class="chart-image">
+                </div>
+                {% endif %}
                 
-                
-                
+                {% if chart_analysis.control_usage_image_base64 %}
+                <div class="chart-wrapper">
+                    <h4>Control Usage Distribution</h4>
+                    <img src="{{ chart_analysis.control_usage_image_base64 }}" 
+                         alt="Chart showing percentage of time using multiple controls" 
+                         class="chart-image">
+                </div>
+                {% endif %}
             </div>
             <div class="markdown-content">
-                <h3>Visual Chart Analysis</h3></h4></h5>
-</h4></h5>
-<p>#<h3>Overview</h4></h5></p>
-<p>Visual chart analysis is currently unavailable. The system was unable to process the chart images using the vision API.</h4></h5></p>
-</h4></h5>
-<p>#<h3>Simultaneity Index (SI) Heatmap</h4></h5></p>
-<p>The SI Heatmap displays coordination patterns between different excavator controls. Darker colors indicate stronger simultaneity (more frequent coordinated use).</h4></h5></p>
-</h4></h5>
-<strong>Key Observations:</strong></h4></h5>
-<p>- Analysis requires vision API to interpret color patterns and values</h4></h5></p>
-<p>- Typical patterns show stronger coordination between related controls (e.g., Arm-Bucket)</h4></h5></p>
-</h4></h5>
-<p>#<h3>Control Usage Distribution</h4></h5></p>
-<p>The control usage chart shows the percentage of time the operator uses different numbers of controls simultaneously.</h4></h5></p>
-</h4></h5>
-<strong>Key Observations:</strong></h4></h5>
-<p>- Expert operators typically show >65% dual control usage</h4></h5></p>
-<p>- Triple control usage above 35% indicates advanced skill</h4></h5></p>
-<p>- Full 4-control coordination above 10% demonstrates mastery</h4></h5></p>
-</h4></h5>
-<p>#<h3>Recommendations</h4></h5></p>
-<p>For detailed visual analysis, please ensure the vision API is properly configured and images are accessible.</h4></h5></p>
-
+                {{ chart_analysis.chart_analysis_html | safe }}
             </div>
         </section>
 
         <!-- Behavior Analysis -->
-        
+        {% if behavior_analysis %}
+        <section class="behavior-analysis">
+            <h2>4. OPERATOR BEHAVIOR ANALYSIS</h2>
+            <p class="section-intro">AI-powered analysis of operator control quality throughout the session, identifying smooth operation and areas for improvement.</p>
+            
+            <div class="score-cards">
+                <div class="score-card">
+                    <h3>Smooth Control</h3>
+                    <div class="score excellent">{{ behavior_analysis.statistics.behavior_counts.smooth }}</div>
+                    <div class="status">{{ behavior_analysis.statistics.percentages.smooth|round(1) }}%</div>
+                </div>
+                <div class="score-card">
+                    <h3>Jerking/Unstable</h3>
+                    <div class="score {{ 'needs-improvement' if behavior_analysis.statistics.behavior_counts.jerking > 5 else 'good' }}">{{ behavior_analysis.statistics.behavior_counts.jerking }}</div>
+                    <div class="status">{{ behavior_analysis.statistics.percentages.jerking|round(1) }}%</div>
+                </div>
+                <div class="score-card">
+                    <h3>Panic/Erratic</h3>
+                    <div class="score {{ 'needs-improvement' if behavior_analysis.statistics.behavior_counts.panic > 3 else 'good' }}">{{ behavior_analysis.statistics.behavior_counts.panic }}</div>
+                    <div class="status">{{ behavior_analysis.statistics.percentages.panic|round(1) }}%</div>
+                </div>
+            </div>
+            
+            {% if behavior_analysis.statistics.notable_events %}
+            <h4>Notable Behavior Events</h4>
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in behavior_analysis.statistics.notable_events[:15] %}
+                    <tr>
+                        <td><strong>{{ event.timestamp }}</strong></td>
+                        <td>{{ event.type|title }}</td>
+                        <td class="{{ 'needs-improvement' if event.severity|lower in ['high', 'medium'] else 'good' }}">{{ event.severity|title }}</td>
+                        <td>{{ event.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if behavior_analysis.statistics.notable_events|length > 15 %}
+            <p><em>...and {{ behavior_analysis.statistics.notable_events|length - 15 }} more events</em></p>
+            {% endif %}
+            {% endif %}
+            
+            <div class="analysis-summary">
+                <h3>Detailed Analysis</h3>
+                {{ behavior_analysis.summary_html | safe }}
+            </div>
+        </section>
+        {% endif %}
 
         <!-- Insights -->
         <section class="insights">
@@ -392,24 +426,16 @@
             
             <h3>5.1 Pattern Recognition Analysis</h3>
             <ul>
-                <li><strong>Control Pattern:</strong> The operator demonstrates a complete lack of bimanual coordination and multi-control usage. They are not utilizing the full capabilities of the excavator's controls, relying on single-axis movements instead of coordinated actions.</li>
-                <li><strong>Timing Pattern:</strong> Cycle times are within the target range and consistent, suggesting a basic understanding of the task. However, this is likely achieved through simplified movements, rather than efficient, coordinated control.</li>
-                <li><strong>Efficiency Pattern:</strong> High productivity score despite poor control skills suggests the operator is compensating through speed or simplified movements. This is unsustainable and potentially unsafe in the long run. There's no clear evidence of fatigue, but the limited control usage may be masking potential inefficiencies.</li>
+                <li><strong>Control Pattern:</strong> {{ insights.pattern_recognition.control_patterns }}</li>
+                <li><strong>Timing Pattern:</strong> {{ insights.pattern_recognition.timing_patterns }}</li>
+                <li><strong>Efficiency Pattern:</strong> {{ insights.pattern_recognition.efficiency_patterns }}</li>
             </ul>
             
             <h3>5.2 Personalized Training Recommendations</h3>
             <ul>
-                
-                <li>Implement bimanual coordination drills focusing on simultaneous boom and swing movements. Start with slow, deliberate exercises and gradually increase speed and complexity.</li>
-                
-                <li>Introduce exercises that require the operator to use dual and triple control combinations to achieve specific tasks, such as digging a trench with simultaneous boom, stick, and bucket adjustments. Use visual aids and step-by-step instructions.</li>
-                
-                <li>Simulate emergency scenarios that require rapid and coordinated control inputs to avoid collisions or other hazards. This will force the operator to develop better reflexes and control skills under pressure.</li>
-                
-                <li>Provide immediate feedback on control usage during training exercises. Use a monitoring system to track bimanual coordination score, dual/triple control usage, and full control usage in real-time.</li>
-                
-                <li>Focus on precision digging exercises that require fine motor control and coordinated movements. This will help the operator develop a better feel for the machine and improve their overall control skills.</li>
-                
+                {% for rec in insights.training_recommendations %}
+                <li>{{ rec }}</li>
+                {% endfor %}
             </ul>
         </section>
         
@@ -417,30 +443,24 @@
             <h2>6. SUMMARY & NEXT STEPS</h2>
             
             <h3>6.1 Overall Assessment</h3>
-            <p>The operator demonstrates a strong understanding of productivity targets and maintains consistent cycle times, indicating a good work ethic and basic task comprehension. However, their control skills are severely lacking, with virtually no evidence of bimanual coordination or multi-control usage. This reliance on simplified movements is a significant safety concern and limits their overall efficiency and potential. While productivity is currently high, it is likely unsustainable without significant improvement in control skills.
-
-To progress, the operator must prioritize developing bimanual coordination and multi-control usage. This will require dedicated training exercises and consistent feedback. Focusing on these areas will not only improve safety and efficiency but also unlock the full potential of the excavator and the operator's capabilities. The current approach is akin to driving a car using only the steering wheel and accelerator, neglecting the brakes and other essential controls.</p>
+            <p>{{ insights.overall_assessment }}</p>
             
             <h3>6.2 Certification Readiness</h3>
             <table class="info-table">
-                <tr><th>Current Proficiency Level:</th><td>Beginner</td></tr>
-                <tr><th>Estimated Training Hours Required:</th><td>40 hours</td></tr>
+                <tr><th>Current Proficiency Level:</th><td>{{ insights.proficiency_level }}</td></tr>
+                <tr><th>Estimated Training Hours Required:</th><td>{{ insights.estimated_training_hours }} hours</td></tr>
             </table>
             
             <h3>6.3 Next Training Session Focus Areas</h3>
             <ul>
-                
-                <li>Bimanual Coordination Drills (Boom & Swing)</li>
-                
-                <li>Dual Control Usage Exercises (Boom, Stick, Bucket)</li>
-                
-                <li>Emergency Scenario Simulations (Collision Avoidance)</li>
-                
+                {% for area in insights.next_focus_areas %}
+                <li>{{ area }}</li>
+                {% endfor %}
             </ul>
         </section>
 
         <footer class="report-footer">
-            <p>Report Generated: 2025-12-10 15:19:36</p>
+            <p>Report Generated: {{ generated_at }}</p>
             <p>Analysis System: Gemini 2.5 Pro Multi-Agent Training Analysis System v1.0</p>
             <p>Data Sources: Video analysis, joystick telemetry, performance metrics database</p>
         </footer>

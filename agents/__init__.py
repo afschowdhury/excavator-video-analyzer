@@ -15,25 +15,17 @@ from .gemini.chart_analysis_agent import ChartAnalysisAgent
 from .gemini.html_assembler_agent import HTMLAssemblerAgent
 from .gemini.insights_generator_agent import InsightsGeneratorAgent
 from .gemini.joystick_analytics_agent import JoystickAnalyticsAgent
-from .gemini.performance_score_agent import PerformanceScoreAgent
-
-# GPT Agents
-from .gpt.frame_classifier import FrameClassifierAgent
-from .gpt.report_generator import ReportGeneratorAgent
 
 __all__ = [
     "BaseAgent",
     "FrameExtractorAgent",
-    "FrameClassifierAgent",
     "ActionDetectorAgent",
     "CycleAssemblerAgent",
-    "ReportGeneratorAgent",
     "AgentOrchestrator",
     # HTML Report Agents
     "CycleMetricsAgent",
     "JoystickAnalyticsAgent",
     "ChartAnalysisAgent",
-    "PerformanceScoreAgent",
     "InsightsGeneratorAgent",
     "HTMLAssemblerAgent",
     "ReportOrchestrator",

@@ -1,15 +1,139 @@
 """Configuration for the Video Analyzer Web Application"""
 
-# Preset video URLs with metadata
-PRESET_VIDEOS = [
-    {
-        "url": "https://www.youtube.com/watch?v=8PAU1LNXYR0",
-        "title": "Excavator Demo",
-        "thumbnail": "https://img.youtube.com/vi/QdWnkH3TGDU/mqdefault.jpg",
-        "video_id": "QdWnkH3TGDU"
-    },
-    # Add more preset videos here as needed
-]
+import json
+import os
+import re
+from pathlib import Path
+
+
+def extract_youtube_video_id(url):
+    """
+    Extract YouTube video ID from various URL formats
+    
+    Args:
+        url (str): YouTube URL
+        
+    Returns:
+        str: Video ID or None if not found
+    """
+    patterns = [
+        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]+)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
+    return None
+
+
+def load_preset_videos_from_json():
+    """
+    Load preset videos from selected_trials.json
+    
+    Returns:
+        list: List of video dictionaries with url, title, thumbnail, video_id, and trial_id
+    """
+    json_path = Path(__file__).parent / "data" / "joystick_data" / "selected_trials.json"
+    
+    if not json_path.exists():
+        print(f"Warning: {json_path} not found. Using empty preset videos list.")
+        return []
+    
+    try:
+        with open(json_path, 'r') as f:
+            trials_data = json.load(f)
+        
+        preset_videos = []
+        for trial in trials_data:
+            trial_id = trial.get("ID")
+            url = trial.get("URL")
+            
+            if not trial_id or not url:
+                continue
+            
+            # Extract YouTube video ID from URL
+            video_id = extract_youtube_video_id(url)
+            
+            if not video_id:
+                print(f"Warning: Could not extract video ID from URL: {url}")
+                continue
+            
+            # Generate thumbnail URL
+            thumbnail = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
+            
+            preset_videos.append({
+                "trial_id": trial_id,
+                "url": url,
+                "title": f"Trial {trial_id}",
+                "thumbnail": thumbnail,
+                "video_id": video_id
+            })
+        
+        return preset_videos
+    
+    except Exception as e:
+        print(f"Error loading selected_trials.json: {e}")
+        return []
+
+
+# Preset video URLs with metadata (loaded from selected_trials.json)
+PRESET_VIDEOS = load_preset_videos_from_json()
+
+
+def get_trial_id_from_url(url):
+    """
+    Get trial ID from YouTube URL by matching against selected_trials.json
+    
+    Args:
+        url (str): YouTube URL
+        
+    Returns:
+        str: Trial ID or None if not found
+    """
+    video_id = extract_youtube_video_id(url)
+    if not video_id:
+        return None
+    
+    for video in PRESET_VIDEOS:
+        if video["video_id"] == video_id:
+            return video["trial_id"]
+    
+    return None
+
+
+def get_trial_data_by_id(trial_id):
+    """
+    Get full trial data from selected_trials.json by trial ID
+    
+    Args:
+        trial_id (str): Trial ID (e.g., "2", "B8", "A9")
+        
+    Returns:
+        dict: Trial data including SI, BCS, control_usage, and URL, or None if not found
+    """
+    json_path = Path(__file__).parent / "data" / "joystick_data" / "selected_trials.json"
+    
+    if not json_path.exists():
+        return None
+    
+    try:
+        with open(json_path, 'r') as f:
+            trials_data = json.load(f)
+        
+        for trial in trials_data:
+            if trial.get("ID") == trial_id:
+                return trial
+        
+        return None
+    
+    except Exception as e:
+        print(f"Error loading trial data: {e}")
+        return None
+
 
 # Application settings
 APP_CONFIG = {

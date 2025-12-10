@@ -6,7 +6,14 @@ import re
 
 from flask import Flask, jsonify, make_response, render_template, request
 
-from config import ANALYZER_TYPES, APP_CONFIG, GPT5_CONFIG, LOCAL_VIDEOS, PRESET_VIDEOS
+from config import (
+    ANALYZER_TYPES,
+    APP_CONFIG,
+    GPT5_CONFIG,
+    LOCAL_VIDEOS,
+    PRESET_VIDEOS,
+    get_trial_id_from_url,
+)
 from scripts.cycle_time_analyzer import CycleTimeAnalyzer
 from scripts.html_report_analyzer import HTMLReportAnalyzer
 from scripts.video_analyzer import VideoAnalyzer
@@ -139,32 +146,84 @@ def analyze_video():
             # Update model if different from default
             if gpt5_model != analyzer_gpt5.model:
                 analyzer_gpt5.model = gpt5_model
-                analyzer_gpt5.orchestrator.frame_classifier.model = gpt5_model
-                analyzer_gpt5.orchestrator.report_generator.model = gpt5_model
+                # analyzer_gpt5.orchestrator.frame_classifier.model = gpt5_model
+                # analyzer_gpt5.orchestrator.report_generator.model = gpt5_model
             
             # Generate report using GPT-5
             max_frames_int = None if max_frames is None or max_frames == "null" else int(max_frames)
-            report = analyzer_gpt5.generate_report(
+            
+            # Use analyze_video to get full pipeline data including behavior analysis
+            analysis_result = analyzer_gpt5.analyze_video(
                 video_path=video_path,
                 fps=int(fps),
-                max_frames=max_frames_int,
-                save_to_file=False
+                max_frames=max_frames_int
             )
             
-            if report is None:
-                return jsonify({'error': 'Failed to generate report'}), 500
+            if not analysis_result:
+                return jsonify({'error': 'Failed to analyze video'}), 500
             
-            # Get pipeline data for additional info
-            pipeline_data = analyzer_gpt5.get_pipeline_data()
+            report = analysis_result.get('report', '')
+            pipeline_data = analysis_result
+            
+            # Extract behavior analysis for HTML reports
+            behavior_analysis = pipeline_data.get('behavior_analysis')
+            
+            # Check if HTML report generation is requested for GPT-5
+            if generate_html_report_flag and html_report_analyzer is not None:
+                try:
+                    # Parse cycle data from report
+                    cycle_data = VideoAnalyzer.parse_cycle_data(report)
+                    
+                    if not cycle_data:
+                        return jsonify({'error': 'No cycle data found in video analysis. HTML report requires cycle time data.'}), 400
+                    
+                    # Get trial_id if available
+                    trial_id = data.get('trial_id')
+                    
+                    # Ensure joystick data path is absolute
+                    if not os.path.isabs(joystick_data_path):
+                        joystick_data_path = os.path.join(os.getcwd(), joystick_data_path)
+                    
+                    # Prepare operator info
+                    operator_info = {
+                        'operator_name': f'Operator (Video: {os.path.basename(video_path)})',
+                        'equipment': 'Excavator',
+                        'exercise_date': __import__('datetime').datetime.now().strftime('%Y-%m-%d'),
+                        'session_duration': 'N/A'
+                    }
+                    
+                    # Generate HTML report with behavior analysis
+                    html_content = html_report_analyzer.generate_html_report(
+                        cycle_data=cycle_data,
+                        joystick_data_path=joystick_data_path,
+                        operator_info=operator_info,
+                        save_to_file=False,
+                        trial_id=trial_id,
+                        behavior_analysis=behavior_analysis,  # Pass behavior analysis
+                    )
+                    
+                    # Return HTML file for download
+                    response = make_response(html_content)
+                    response.headers['Content-Type'] = 'text/html'
+                    filename = f"training_report_{trial_id if trial_id else 'gpt5'}_{__import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+                    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+                    return response
+                    
+                except Exception as e:
+                    import traceback
+                    print(f"Error generating HTML report: {e}")
+                    print(traceback.format_exc())
+                    return jsonify({'error': f'Failed to generate HTML report: {str(e)}'}), 500
             
             return jsonify({
                 'success': True,
                 'report': report,
                 'analyzer_type': 'gpt5',
                 'metadata': {
-                    'frames_analyzed': len(pipeline_data.get('frames', [])),
+                    'frames_analyzed': pipeline_data.get('frames_analyzed', 0),
                     'events_detected': len(pipeline_data.get('events', [])),
                     'cycles_found': len(pipeline_data.get('cycles', [])),
+                    'behavior_events_detected': len(behavior_analysis.get('behavior_events', [])) if behavior_analysis else 0,
                     'fps': fps,
                     'model': gpt5_model,
                     'max_frames': max_frames_int if max_frames_int else 'No limit'
@@ -261,6 +320,9 @@ def analyze_video():
                     if not cycle_data:
                         return jsonify({'error': 'No cycle data found in video analysis. HTML report requires cycle time data.'}), 400
                     
+                    # Get trial_id from the request or derive from video URL
+                    trial_id = data.get('trial_id') or get_trial_id_from_url(video_url)
+                    
                     # Ensure joystick data path is absolute
                     if not os.path.isabs(joystick_data_path):
                         joystick_data_path = os.path.join(os.getcwd(), joystick_data_path)
@@ -279,12 +341,17 @@ def analyze_video():
                         joystick_data_path=joystick_data_path,
                         operator_info=operator_info,
                         save_to_file=False,
+                        trial_id=trial_id,
                     )
                     
                     # Return HTML file for download
                     response = make_response(html_content)
                     response.headers['Content-Type'] = 'text/html'
-                    response.headers['Content-Disposition'] = f'attachment; filename=training_report_{video_id}_{__import__("datetime").datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+                    # Use trial_id for filename if available, otherwise use video_id with timestamp
+                    if trial_id:
+                        response.headers['Content-Disposition'] = f'attachment; filename=training_report_{trial_id}.html'
+                    else:
+                        response.headers['Content-Disposition'] = f'attachment; filename=training_report_{video_id}_{__import__("datetime").datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
                     return response
                     
                 except Exception as e:
@@ -330,6 +397,7 @@ def generate_html_report():
         operator_info = data.get('operator_info', {})
         save_to_file = data.get('save_to_file', True)
         return_html = data.get('return_html', False)
+        trial_id = data.get('trial_id')  # Get trial_id from request
         
         # Validate inputs
         if not cycle_data:
@@ -352,6 +420,7 @@ def generate_html_report():
             joystick_data_path=joystick_data_path,
             operator_info=operator_info,
             save_to_file=save_to_file,
+            trial_id=trial_id,
         )
         
         # Get pipeline data for metadata
@@ -399,6 +468,7 @@ def generate_html_report_from_video():
         prompt_type = data.get('prompt_type', 'cycle_time_simple')
         joystick_data_path = data.get('joystick_data_path', 'data/joystick_data')
         operator_info = data.get('operator_info', {})
+        trial_id = data.get('trial_id')  # Get trial_id from request
         
         # Get time range parameters (optional)
         use_full_video = data.get('use_full_video', False)
@@ -407,6 +477,10 @@ def generate_html_report_from_video():
         
         if not video_url:
             return jsonify({'error': 'video_url is required'}), 400
+        
+        # If trial_id not provided, try to extract from URL
+        if not trial_id:
+            trial_id = get_trial_id_from_url(video_url)
         
         # First, analyze the video to get cycle data
         # If use_full_video is True, pass empty strings to override config defaults
@@ -446,6 +520,7 @@ def generate_html_report_from_video():
             joystick_data_path=joystick_data_path,
             operator_info=operator_info,
             save_to_file=True,
+            trial_id=trial_id,
         )
         
         # Get pipeline data

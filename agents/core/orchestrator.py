@@ -5,10 +5,12 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 from ..core.frame_extractor import FrameExtractorAgent
-from ..gpt.frame_classifier import FrameClassifierAgent
+# from ..gpt.frame_classifier import FrameClassifierAgent
+from ..gemini.behavior_analysis_agent import BehaviorAnalysisAgent
 from ..core.action_detector import ActionDetectorAgent
 from ..core.cycle_assembler import CycleAssemblerAgent
-from ..gpt.report_generator import ReportGeneratorAgent
+# from ..gpt.report_generator import ReportGeneratorAgent
+from ..core.simulation_report_agent import SimulationReportAgent
 
 
 class AgentOrchestrator:
@@ -28,8 +30,11 @@ class AgentOrchestrator:
         self.frame_extractor = FrameExtractorAgent(
             config=self.config.get("frame_extractor", {})
         )
-        self.frame_classifier = FrameClassifierAgent(
-            config=self.config.get("frame_classifier", {})
+        # self.frame_classifier = FrameClassifierAgent(
+        #     config=self.config.get("frame_classifier", {})
+        # )
+        self.behavior_analyzer = BehaviorAnalysisAgent(
+            config=self.config.get("behavior_analysis", {})
         )
         self.action_detector = ActionDetectorAgent(
             config=self.config.get("action_detector", {})
@@ -37,8 +42,11 @@ class AgentOrchestrator:
         self.cycle_assembler = CycleAssemblerAgent(
             config=self.config.get("cycle_assembler", {})
         )
-        self.report_generator = ReportGeneratorAgent(
-            config=self.config.get("report_generator", {})
+        # self.report_generator = ReportGeneratorAgent(
+        #     config=self.config.get("report_generator", {})
+        # )
+        self.simulation_report_agent = SimulationReportAgent(
+            config=self.config.get("simulation_report", {})
         )
 
         self.pipeline_data = {}
@@ -57,46 +65,71 @@ class AgentOrchestrator:
             Dictionary containing report and metadata
         """
         self.console.print(
-            "\n[bold cyan]═══ GPT-5 Multi-Agent Video Analysis Pipeline ═══[/bold cyan]\n"
+            "\n[bold cyan]═══ Multi-Agent Video Analysis Pipeline ═══[/bold cyan]\n"
         )
 
         try:
             # Stage 1: Extract Frames
             if progress_callback:
                 progress_callback("Extracting frames from video...", 0)
-            self.console.print("\n[bold cyan]━━━ Stage 1/5: Frame Extraction ━━━[/bold cyan]")
+            self.console.print("\n[bold cyan]━━━ Stage 1/6: Frame Extraction ━━━[/bold cyan]")
             frames = self.frame_extractor.process(video_path)
             self.pipeline_data["frames"] = frames
             self.console.print(f"[green]✓[/green] Extracted {len(frames)} frames\n")
 
-            # Stage 2: Classify Frames
-            if progress_callback:
-                progress_callback("Classifying frames with GPT-5...", 20)
-            self.console.print(f"[bold cyan]━━━ Stage 2/5: Frame Classification ━━━[/bold cyan]")
-            classified_frames = self.frame_classifier.process(frames)
-            self.pipeline_data["classified_frames"] = classified_frames
-            self.console.print(f"[green]✓[/green] Classified {len(classified_frames)} frames\n")
+            # Stage 2: Classify Frames (DISABLED - GPT Removed)
+            # if progress_callback:
+            #     progress_callback("Classifying frames...", 15)
+            # self.console.print(f"[bold cyan]━━━ Stage 2/6: Frame Classification (SKIPPED) ━━━[/bold cyan]")
+            # classified_frames = self.frame_classifier.process(frames)
+            # self.pipeline_data["classified_frames"] = classified_frames
+            # self.console.print(f"[green]✓[/green] Classified {len(classified_frames)} frames\n")
+            
+            # Placeholder for classified frames to prevent crashes in dependent agents if called
+            classified_frames = [] 
 
-            # Stage 3: Detect Actions
+            # Stage 3: Behavior Analysis
             if progress_callback:
-                progress_callback("Detecting actions and transitions...", 60)
-            self.console.print(f"[bold cyan]━━━ Stage 3/5: Action Detection ━━━[/bold cyan]")
-            events = self.action_detector.process(classified_frames)
-            self.pipeline_data["events"] = events
-            self.console.print(f"[green]✓[/green] Detected {len(events)} events\n")
+                progress_callback("Analyzing operator behavior...", 30)
+            self.console.print(f"[bold cyan]━━━ Stage 3/6: Behavior Analysis ━━━[/bold cyan]")
+            behavior_analysis = self.behavior_analyzer.process(frames)
+            self.pipeline_data["behavior_analysis"] = behavior_analysis
+            behavior_events = behavior_analysis.get("behavior_events", [])
+            self.console.print(f"[green]✓[/green] Analyzed behavior: {len(behavior_events)} events detected\n")
 
-            # Stage 4: Assemble Cycles
-            if progress_callback:
-                progress_callback("Assembling excavation cycles...", 80)
-            self.console.print(f"[bold cyan]━━━ Stage 4/5: Cycle Assembly ━━━[/bold cyan]")
-            cycles = self.cycle_assembler.process(events)
-            self.pipeline_data["cycles"] = cycles
-            self.console.print(f"[green]✓[/green] Assembled {len(cycles)} cycles\n")
+            # Stage 4: Detect Actions
+            # if progress_callback:
+            #     progress_callback("Detecting actions and transitions...", 50)
+            # self.console.print(f"[bold cyan]━━━ Stage 4/6: Action Detection (SKIPPED) ━━━[/bold cyan]")
+            # events = self.action_detector.process(classified_frames)
+            # self.pipeline_data["events"] = events
+            # self.console.print(f"[green]✓[/green] Detected {len(events)} events\n")
+            events = []
 
-            # Stage 5: Generate Report
+            # Stage 5: Assemble Cycles
+            # if progress_callback:
+            #     progress_callback("Assembling excavation cycles...", 70)
+            # self.console.print(f"[bold cyan]━━━ Stage 5/6: Cycle Assembly (SKIPPED) ━━━[/bold cyan]")
+            # cycles = self.cycle_assembler.process(events)
+            # self.pipeline_data["cycles"] = cycles
+            # self.console.print(f"[green]✓[/green] Assembled {len(cycles)} cycles\n")
+            cycles = []
+
+            # Stage 5.5: Extract Simulation Report Metrics
             if progress_callback:
-                progress_callback("Generating final report...", 90)
-            self.console.print(f"[bold cyan]━━━ Stage 5/5: Report Generation ━━━[/bold cyan]")
+                progress_callback("Extracting simulation metrics...", 80)
+            self.console.print(f"[bold cyan]━━━ Extracting Simulation Metrics ━━━[/bold cyan]")
+            simulation_metrics = self.simulation_report_agent.process(video_path)
+            self.pipeline_data["simulation_metrics"] = simulation_metrics
+            if simulation_metrics.get('found'):
+                self.console.print(f"[green]✓[/green] Extracted simulation metrics for ID: {simulation_metrics.get('video_id')}\n")
+            else:
+                self.console.print(f"[yellow]⚠[/yellow] No simulation report found for this video\n")
+
+            # Stage 6: Generate Report (DISABLED - GPT Removed)
+            # if progress_callback:
+            #     progress_callback("Generating final report...", 85)
+            # self.console.print(f"[bold cyan]━━━ Stage 6/6: Report Generation (SKIPPED) ━━━[/bold cyan]")
 
             # Build context for report generation
             context = {
@@ -105,22 +138,26 @@ class AgentOrchestrator:
                 "fps": self.frame_extractor.fps,
                 "total_events": self.action_detector.get_state("total_events"),
                 "total_cycles": self.cycle_assembler.get_state("total_cycles"),
+                "behavior_analysis": behavior_analysis,
+                "simulation_metrics": simulation_metrics,
             }
 
-            report = self.report_generator.process(cycles, context)
+            # report = self.report_generator.process(cycles, context)
+            report = "Report generation disabled (GPT agents removed)."
             self.pipeline_data["report"] = report
 
             if progress_callback:
                 progress_callback("Analysis complete!", 100)
 
             self.console.print(
-                f"\n[bold green]✓ Analysis complete![/bold green] Found {len(cycles)} cycles.\n"
+                f"\n[bold green]✓ Analysis complete![/bold green] (Partial execution due to removed agents)\n"
             )
 
             return {
                 "report": report,
                 "cycles": cycles,
                 "events": events,
+                "behavior_analysis": behavior_analysis,
                 "frames_analyzed": len(frames),
                 "metadata": context,
             }
@@ -161,7 +198,6 @@ class AgentOrchestrator:
 
     def reset(self):
         """Reset all agents and pipeline data"""
-        self.frame_classifier.reset_context()
+        # self.frame_classifier.reset_context()
         self.pipeline_data = {}
         self.console.print("[yellow]Pipeline reset[/yellow]")
-

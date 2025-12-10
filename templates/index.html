@@ -136,19 +136,20 @@
                     <div class="form-group">
                         <label for="video-source">Video Source</label>
                         <select id="video-source" class="form-control">
-                            <option value="url">YouTube URL</option>
+                            <option value="preset">Preset Videos</option>
                             <option value="local">Local Video</option>
                         </select>
                     </div>
 
-                    <!-- Video URL Input (for YouTube) -->
-                    <div class="form-group" id="url-group">
+                    <!-- Video URL Input (hidden - now using presets only for Gemini) -->
+                    <div class="form-group hidden" id="url-group">
                         <label for="video-url">YouTube Video URL</label>
                         <input 
                             type="text" 
                             id="video-url" 
                             class="form-control" 
                             placeholder="https://youtu.be/..."
+                            disabled
                         >
                     </div>
 
@@ -167,7 +168,7 @@
                         <label>Preset Videos</label>
                         <div class="preset-grid" id="preset-grid">
                             {% for video in preset_videos %}
-                            <div class="preset-item" data-url="{{ video.url }}" data-video-id="{{ video.video_id }}">
+                            <div class="preset-item" data-url="{{ video.url }}" data-video-id="{{ video.video_id }}" data-trial-id="{{ video.trial_id }}">
                                 <img src="{{ video.thumbnail }}" alt="{{ video.title }}">
                                 <span class="preset-title">{{ video.title }}</span>
                             </div>

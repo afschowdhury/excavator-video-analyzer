@@ -8,10 +8,11 @@ let state = {
     gpt5Model: 'gpt-4o',
     fps: 3,
     maxFrames: null,
-    videoSource: 'url',
+    videoSource: 'preset',
     videoUrl: '',
     videoPath: '',
     videoId: null,
+    trialId: null,
     isAnalyzing: false,
     timeRangeMode: 'whole',
     startOffset: '',
@@ -192,12 +193,14 @@ function setupEventListeners() {
         item.addEventListener('click', () => {
             const url = item.dataset.url;
             const videoId = item.dataset.videoId;
+            const trialId = item.dataset.trialId;
             
             videoUrlInput.value = url;
             state.videoUrl = url;
             state.videoId = videoId;
-            state.videoSource = 'url';
-            videoSourceSelect.value = 'url';
+            state.trialId = trialId;
+            state.videoSource = 'preset';
+            videoSourceSelect.value = 'preset';
             
             updateVideoEmbed(videoId);
             updatePresetSelection(url);
@@ -308,11 +311,11 @@ function validateTimeRange() {
 
 // Update video source UI
 function updateVideoSourceUI() {
-    if (state.videoSource === 'url') {
-        urlGroup.classList.remove('hidden');
+    if (state.videoSource === 'preset') {
+        urlGroup.classList.add('hidden');
         localGroup.classList.add('hidden');
         presetGroup.classList.remove('hidden');
-    } else {
+    } else if (state.videoSource === 'local') {
         urlGroup.classList.add('hidden');
         localGroup.classList.remove('hidden');
         presetGroup.classList.add('hidden');
@@ -376,8 +379,8 @@ function updateAnalyzeButton() {
         // GPT-5 requires local video
         isValid = isValid && state.videoPath;
     } else {
-        // Gemini requires prompt and video URL
-        isValid = isValid && state.selectedPrompt && state.videoId;
+        // Gemini requires prompt, video URL, and trial ID
+        isValid = isValid && state.selectedPrompt && state.videoId && state.trialId;
     }
     
     analyzeBtn.disabled = !isValid;
@@ -434,6 +437,7 @@ async function handleAnalyze() {
             requestBody.video_url = state.videoUrl;
             requestBody.prompt_type = state.selectedPrompt;
             requestBody.cycle_mode = state.cycleMode;
+            requestBody.trial_id = state.trialId;  // Add trial_id for joystick data matching
             
             // Add time range parameters
             if (state.timeRangeMode === 'whole') {
@@ -620,6 +624,7 @@ async function handleGenerateReport() {
             requestBody.video_url = state.videoUrl;
             requestBody.prompt_type = state.selectedPrompt;
             requestBody.cycle_mode = state.cycleMode;
+            requestBody.trial_id = state.trialId;  // Add trial_id for joystick data matching
             
             // Add time range parameters
             if (state.timeRangeMode === 'whole') {

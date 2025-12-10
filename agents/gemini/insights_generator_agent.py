@@ -58,11 +58,11 @@ class InsightsGeneratorAgent(BaseAgent):
 
         cycle_metrics = input_data.get("cycle_metrics", {})
         joystick_analytics = input_data.get("joystick_analytics", {})
-        performance_scores = input_data.get("performance_scores", {})
+        chart_analysis = input_data.get("chart_analysis", {})
 
         # Build comprehensive prompt
         prompt = self._build_insights_prompt(
-            cycle_metrics, joystick_analytics, performance_scores
+            cycle_metrics, joystick_analytics, chart_analysis
         )
 
         try:
@@ -119,14 +119,14 @@ class InsightsGeneratorAgent(BaseAgent):
         except Exception as e:
             self.log(f"Failed to generate AI insights: {e}", "warning")
             return self._generate_fallback_insights(
-                cycle_metrics, joystick_analytics, performance_scores
+                cycle_metrics, joystick_analytics, chart_analysis
             )
 
     def _build_insights_prompt(
         self,
         cycle_metrics: Dict[str, Any],
         joystick_analytics: Dict[str, Any],
-        performance_scores: Dict[str, Any],
+        chart_analysis: Dict[str, Any],
     ) -> str:
         """
         Build comprehensive prompt for insights generation
@@ -134,17 +134,12 @@ class InsightsGeneratorAgent(BaseAgent):
         Args:
             cycle_metrics: Cycle time metrics
             joystick_analytics: Joystick control analytics
-            performance_scores: Performance scores
+            chart_analysis: Chart analysis data
 
         Returns:
             Formatted prompt string
         """
         prompt = f"""{self.system_prompt}
-
-**Performance Scores:**
-- Productivity: {performance_scores.get('productivity_score', 0)}/100 ({performance_scores.get('productivity_status', 'Unknown')})
-- Control Skill: {performance_scores.get('control_skill_score', 0)}/100 ({performance_scores.get('control_skill_status', 'Unknown')})
-- Safety: {performance_scores.get('safety_score', 0)}/100 ({performance_scores.get('safety_status', 'Unknown')})
 
 **Cycle Time Analysis:**
 - Total Cycles: {cycle_metrics.get('total_cycles', 0)}
@@ -157,7 +152,11 @@ class InsightsGeneratorAgent(BaseAgent):
 - Bimanual Coordination Score: {joystick_analytics.get('bcs_score', 0)} (Target: >0.25)
 - Dual Control Usage: {joystick_analytics.get('control_usage', {}).get('dual_control', 0):.1f}% (Target: >65%)
 - Triple Control Usage: {joystick_analytics.get('control_usage', {}).get('triple_control', 0):.1f}% (Target: >35%)
-- Full Control Usage: {joystick_analytics.get('control_usage', {}).get('full_control', 0):.1f}% (Target: >10%)"""
+- Full Control Usage: {joystick_analytics.get('control_usage', {}).get('full_control', 0):.1f}% (Target: >10%)
+
+**Visual Chart Analysis Summary:**
+{chart_analysis.get('chart_analysis_markdown', 'No visual chart analysis available.')}
+"""
 
         return prompt
 
@@ -165,7 +164,7 @@ class InsightsGeneratorAgent(BaseAgent):
         self,
         cycle_metrics: Dict[str, Any],
         joystick_analytics: Dict[str, Any],
-        performance_scores: Dict[str, Any],
+        chart_analysis: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Generate fallback insights without AI
@@ -173,33 +172,33 @@ class InsightsGeneratorAgent(BaseAgent):
         Args:
             cycle_metrics: Cycle time metrics
             joystick_analytics: Joystick control analytics
-            performance_scores: Performance scores
+            chart_analysis: Chart analysis data
 
         Returns:
             Dictionary containing basic insights
         """
         self.log("Using fallback insights generation", "warning")
 
-        avg_score = (
-            performance_scores.get("productivity_score", 0)
-            + performance_scores.get("control_skill_score", 0)
-            + performance_scores.get("safety_score", 0)
-        ) / 3
-
-        if avg_score >= 85:
+        # Estimate proficiency based on cycle time consistency and BCS
+        consistency = cycle_metrics.get("consistency_score", 0)
+        bcs = joystick_analytics.get("bcs_score", 0)
+        
+        # Simple heuristic for proficiency without scores
+        proficiency_score = (consistency * 0.5) + (bcs * 200) # approximate scale
+        
+        if proficiency_score >= 80:
             proficiency = "Advanced"
             training_hours = 10
-        elif avg_score >= 70:
+        elif proficiency_score >= 60:
             proficiency = "Intermediate"
             training_hours = 20
-        elif avg_score >= 50:
+        elif proficiency_score >= 40:
             proficiency = "Beginner"
             training_hours = 40
         else:
             proficiency = "Beginner"
             training_hours = 60
 
-        bcs = joystick_analytics.get("bcs_score", 0)
         dual_usage = joystick_analytics.get("control_usage", {}).get("dual_control", 0)
 
         recommendations = []
@@ -234,7 +233,7 @@ class InsightsGeneratorAgent(BaseAgent):
                 "efficiency_patterns": f"Consistency score of {cycle_metrics.get('consistency_score', 0):.1f}% indicates {'stable' if cycle_metrics.get('consistency_score', 0) > 70 else 'variable'} performance",
             },
             "training_recommendations": recommendations,
-            "overall_assessment": f"The operator demonstrates {proficiency.lower()} proficiency with an overall performance average of {avg_score:.1f}/100. "
+            "overall_assessment": f"The operator demonstrates {proficiency.lower()} proficiency. "
             f"Key areas for improvement include control coordination and cycle consistency. With focused training, significant improvement is achievable.",
             "proficiency_level": proficiency,
             "estimated_training_hours": training_hours,

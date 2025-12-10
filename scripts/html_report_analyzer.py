@@ -45,6 +45,9 @@ class HTMLReportAnalyzer:
         operator_info: Optional[Dict[str, Any]] = None,
         save_to_file: bool = True,
         filename: Optional[str] = None,
+        trial_id: Optional[str] = None,
+        behavior_analysis: Optional[Dict[str, Any]] = None,
+        video_path: Optional[str] = None,
     ) -> str:
         """
         Generate an HTML training report from cycle data and joystick analytics
@@ -59,6 +62,9 @@ class HTMLReportAnalyzer:
                 - session_duration: Duration of session
             save_to_file: Whether to save the report to an HTML file
             filename: Custom filename for the report (without extension)
+            trial_id: Trial ID for loading data from selected_trials.json and filename generation
+            behavior_analysis: Optional pre-computed behavior analysis results
+            video_path: Optional video path for on-demand behavior analysis
 
         Returns:
             HTML report string
@@ -83,13 +89,16 @@ class HTMLReportAnalyzer:
                 cycle_data=cycle_data,
                 joystick_data_path=joystick_data_path,
                 operator_info=operator_info,
+                trial_id=trial_id,
+                behavior_analysis=behavior_analysis,
+                video_path=video_path,
             )
 
             html_report = result["html_report"]
 
             # Save to file if requested
             if save_to_file:
-                filepath = self._save_report(html_report, filename, operator_info)
+                filepath = self._save_report(html_report, filename, operator_info, trial_id)
                 self.console.print(
                     f"\n[bold green]✓ Report saved to:[/bold green] {filepath}\n"
                 )
@@ -105,6 +114,7 @@ class HTMLReportAnalyzer:
         html_content: str,
         filename: Optional[str],
         operator_info: Dict[str, Any],
+        trial_id: Optional[str] = None,
     ) -> str:
         """
         Save HTML report to file
@@ -113,6 +123,7 @@ class HTMLReportAnalyzer:
             html_content: HTML report content
             filename: Optional custom filename
             operator_info: Operator information for default filename
+            trial_id: Trial ID for filename generation (takes precedence)
 
         Returns:
             Path to saved file
@@ -121,8 +132,11 @@ class HTMLReportAnalyzer:
             # Use custom filename
             if not filename.endswith(".html"):
                 filename = f"{filename}.html"
+        elif trial_id:
+            # Generate filename from trial_id (new approach)
+            filename = f"training_report_{trial_id}.html"
         else:
-            # Generate filename from operator name and timestamp
+            # Generate filename from operator name and timestamp (backward compatibility)
             operator_name = operator_info.get("operator_name", "unknown").replace(
                 " ", "_"
             )

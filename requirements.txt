@@ -9,3 +9,4 @@ icecream>=2.0.0
 openai>=1.0.0
 opencv-python>=4.8.0
 pillow>=10.0.0
+pypdf>=6.0.0

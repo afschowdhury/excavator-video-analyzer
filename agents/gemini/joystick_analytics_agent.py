@@ -46,24 +46,30 @@ class JoystickAnalyticsAgent(BaseAgent):
         self, input_data: str, context: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Process joystick data and generate markdown report using Gemini AI
+        Process joystick data and generate HTML report using Gemini AI
 
         Args:
-            input_data: Path to joystick data directory or stats.json file
-            context: Optional context
+            input_data: Path to joystick data directory, stats.json file, or trial_id
+            context: Optional context dictionary. Can contain 'trial_id' for new data structure
 
         Returns:
-            Dictionary containing markdown report and structured data
+            Dictionary containing HTML report and structured data
         """
-        self.log(f"Processing joystick data from {input_data}", "info")
+        # Extract trial_id from context if provided
+        trial_id = context.get("trial_id") if context else None
+        
+        if trial_id:
+            self.log(f"Processing joystick data for trial ID: {trial_id}", "info")
+        else:
+            self.log(f"Processing joystick data from {input_data}", "info")
 
         # Determine paths and load data
-        stats_data = self._load_stats_data(input_data)
+        stats_data = self._load_stats_data(input_data, trial_id)
         if not stats_data:
             return self._generate_fallback_response()
 
-        # Generate markdown report using Gemini
-        markdown_report = self._generate_markdown_report(stats_data)
+        # Generate HTML report using Gemini
+        html_report = self._generate_html_report(stats_data)
 
         # Extract structured data for backward compatibility
         si_matrix = stats_data.get("SI", {})
@@ -77,13 +83,20 @@ class JoystickAnalyticsAgent(BaseAgent):
             "full_control": control_usage_raw.get("4_controls", 0),
         }
 
-        # Prepare image paths (for potential future use)
-        base_dir = os.path.dirname(input_data) if os.path.isfile(input_data) else input_data
-        heatmap_path = os.path.join(base_dir, "SI_Heatmap.png")
-        control_usage_path = os.path.join(base_dir, "control_usage.png")
+        # Prepare image paths based on trial_id or old structure
+        if trial_id:
+            # New folder structure with trial_id
+            base_dir = Path(__file__).parent.parent.parent / "data" / "joystick_data"
+            heatmap_path = str(base_dir / "SI_Heatmaps" / f"SI_Heatmap_{trial_id}.png")
+            control_usage_path = str(base_dir / "Control_Usage" / f"control_usage_{trial_id}.png")
+        else:
+            # Old structure for backward compatibility
+            base_dir = os.path.dirname(input_data) if os.path.isfile(input_data) else input_data
+            heatmap_path = os.path.join(base_dir, "SI_Heatmap.png")
+            control_usage_path = os.path.join(base_dir, "control_usage.png")
 
         result = {
-            "markdown_report": markdown_report,
+            "html_report": html_report,
             "si_matrix": si_matrix,
             "bcs_score": round(bcs_score, 3),
             "control_usage": control_usage,
@@ -94,16 +107,39 @@ class JoystickAnalyticsAgent(BaseAgent):
         self.log(f"✓ Analytics processed: BCS={bcs_score:.3f}", "success")
         return result
 
-    def _load_stats_data(self, input_data: str) -> Optional[Dict[str, Any]]:
+    def _load_stats_data(self, input_data: str, trial_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
-        Load stats.json data from input path
+        Load stats data from selected_trials.json (if trial_id provided) or stats.json file
 
         Args:
-            input_data: Path to directory or stats.json file
+            input_data: Path to directory or stats.json file (used for backward compatibility)
+            trial_id: Trial ID to load from selected_trials.json (new approach)
 
         Returns:
             Dictionary containing stats data or None on error
         """
+        # New approach: Load from selected_trials.json using trial_id
+        if trial_id:
+            selected_trials_path = Path(__file__).parent.parent.parent / "data" / "joystick_data" / "selected_trials.json"
+            
+            try:
+                with open(selected_trials_path, "r") as f:
+                    trials_data = json.load(f)
+                
+                # Find the trial with matching ID
+                for trial in trials_data:
+                    if trial.get("ID") == trial_id:
+                        self.log(f"✓ Loaded data for trial ID: {trial_id}", "success")
+                        return trial
+                
+                self.log(f"Trial ID {trial_id} not found in selected_trials.json", "error")
+                return None
+                
+            except Exception as e:
+                self.log(f"Failed to load selected_trials.json: {e}", "error")
+                return None
+        
+        # Old approach: Load from stats.json (backward compatibility)
         # Determine stats.json path
         if os.path.isdir(input_data):
             stats_path = os.path.join(input_data, "stats.json")
@@ -117,17 +153,17 @@ class JoystickAnalyticsAgent(BaseAgent):
             self.log(f"Failed to load stats.json: {e}", "error")
             return None
 
-    def _generate_markdown_report(self, stats_data: Dict[str, Any]) -> str:
+    def _generate_html_report(self, stats_data: Dict[str, Any]) -> str:
         """
-        Generate markdown report using Gemini AI
+        Generate HTML report using Gemini AI
 
         Args:
             stats_data: Dictionary containing SI, BCS, and control_usage data
 
         Returns:
-            Markdown formatted report string
+            HTML formatted report string
         """
-        self.log("Generating markdown report with Gemini AI", "info")
+        self.log("Generating HTML report with Gemini AI", "info")
 
         # Format the JSON data as a string for the prompt
         json_data = json.dumps(stats_data, indent=2)
@@ -152,26 +188,26 @@ Please generate the Joystick Coordination Analysis report now."""
                 ),
             )
 
-            markdown_report = response.text
-            self.log("✓ Markdown report generated successfully", "success")
-            ic(markdown_report)
-            return markdown_report
+            html_report = response.text
+            self.log("✓ HTML report generated successfully", "success")
+            ic(html_report)
+            return html_report
 
         except Exception as e:
             self.log(f"Failed to generate AI report: {e}", "warning")
-            return self._generate_fallback_markdown(stats_data)
+            return self._generate_fallback_html(stats_data)
 
-    def _generate_fallback_markdown(self, stats_data: Dict[str, Any]) -> str:
+    def _generate_fallback_html(self, stats_data: Dict[str, Any]) -> str:
         """
-        Generate fallback markdown report without AI
+        Generate fallback HTML report without AI
 
         Args:
             stats_data: Dictionary containing joystick analytics data
 
         Returns:
-            Basic markdown report string
+            Basic HTML report string
         """
-        self.log("Using fallback markdown generation", "warning")
+        self.log("Using fallback HTML generation", "warning")
 
         si_matrix = stats_data.get("SI", {})
         bcs_score = stats_data.get("BCS", 0)
@@ -219,39 +255,96 @@ Please generate the Joystick Coordination Analysis report now."""
         else:
             key_finding = "The operator demonstrates expert efficiency across all control configurations, showing mastery of complex multi-joystick coordination."
 
-        markdown = f"""# Joystick Coordination Analysis
+        html = f"""<div class="joystick-analysis">
+    <h3>Multi-Joystick Coordination</h3>
+    <p>The Simultaneity Index (SI) Matrix shows how frequently different controls are used together. Higher values indicate better coordination between specific control pairs.</p>
 
-## Multi-Joystick Coordination
-The Simultaneity Index (SI) Matrix shows how frequently different controls are used together. Higher values indicate better coordination between specific control pairs.
+    <table class="metrics-table">
+        <thead>
+            <tr>
+                <th>Control Pair</th>
+                <th>Function Mapping</th>
+                <th>Simultaneity Index (SI)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Left X + Right X</strong></td>
+                <td>(Swing + Bucket)</td>
+                <td>{swing_bucket:.3f}</td>
+            </tr>
+            <tr>
+                <td><strong>Left X + Right Y</strong></td>
+                <td>(Swing + Boom)</td>
+                <td>{swing_boom:.3f}</td>
+            </tr>
+            <tr>
+                <td><strong>Left Y + Right X</strong></td>
+                <td>(Arm + Bucket)</td>
+                <td>{arm_bucket:.3f}</td>
+            </tr>
+            <tr>
+                <td><strong>Left Y + Right Y</strong></td>
+                <td>(Arm + Boom)</td>
+                <td>{arm_boom:.3f}</td>
+            </tr>
+        </tbody>
+    </table>
 
-| Control Pair | Function Mapping | Simultaneity Index (SI) |
-| :--- | :--- | :--- |
-| **Left X + Right X** | (Swing + Bucket) | {swing_bucket:.3f} |
-| **Left X + Right Y** | (Swing + Boom) | {swing_boom:.3f} |
-| **Left Y + Right X** | (Arm + Bucket) | {arm_bucket:.3f} |
-| **Left Y + Right Y** | (Arm + Boom) | {arm_boom:.3f} |
+    <hr>
 
----
+    <h3>Bimanual Coordination Score (BCS)</h3>
+    <p class="bcs-score">
+        <strong>Overall BCS:</strong> {bcs_score:.3f}<br>
+        <strong>Interpretation:</strong> {bcs_interp}
+    </p>
 
-## Bimanual Coordination Score (BCS)
-**Overall BCS:** {bcs_score:.3f}
-**Interpretation:** {bcs_interp}
+    <hr>
 
----
+    <h3>Simultaneous Control Usage Distribution</h3>
+    <table class="metrics-table">
+        <thead>
+            <tr>
+                <th>Control Configuration</th>
+                <th>% of Active Time</th>
+                <th>Expert Benchmark</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Single Control (≥1)</strong></td>
+                <td>100.0%</td>
+                <td>100%</td>
+                <td>N/A</td>
+            </tr>
+            <tr>
+                <td><strong>Dual Control (≥2)</strong></td>
+                <td>{dual_usage:.1f}%</td>
+                <td>&gt;65%</td>
+                <td>{dual_status}</td>
+            </tr>
+            <tr>
+                <td><strong>Triple Control (≥3)</strong></td>
+                <td>{triple_usage:.1f}%</td>
+                <td>&gt;35%</td>
+                <td>{triple_status}</td>
+            </tr>
+            <tr>
+                <td><strong>Full Control (4)</strong></td>
+                <td>{full_usage:.1f}%</td>
+                <td>&gt;10%</td>
+                <td>{full_status}</td>
+            </tr>
+        </tbody>
+    </table>
 
-## Simultaneous Control Usage Distribution
+    <div class="analysis-summary">
+        <strong>Key Finding:</strong> {key_finding}
+    </div>
+</div>"""
 
-| Control Configuration | % of Active Time | Expert Benchmark | Status |
-| :--- | :--- | :--- | :--- |
-| **Single Control (≥1)** | 100.0% | 100% | N/A |
-| **Dual Control (≥2)** | {dual_usage:.1f}% | >65% | {dual_status} |
-| **Triple Control (≥3)** | {triple_usage:.1f}% | >35% | {triple_status} |
-| **Full Control (4)** | {full_usage:.1f}% | >10% | {full_status} |
-
-**Key Finding:** {key_finding}
-"""
-
-        return markdown
+        return html
 
     def _generate_fallback_response(self) -> Dict[str, Any]:
         """
@@ -262,14 +355,13 @@ The Simultaneity Index (SI) Matrix shows how frequently different controls are u
         """
         self.log("Using complete fallback response", "warning")
         
-        fallback_markdown = """# Joystick Coordination Analysis
-
-## Error
-Unable to load joystick telemetry data. Please ensure stats.json file exists and is properly formatted.
-"""
+        fallback_html = """<div class="joystick-analysis">
+    <h3>Error</h3>
+    <p>Unable to load joystick telemetry data. Please ensure stats.json file exists and is properly formatted.</p>
+</div>"""
 
         return {
-            "markdown_report": fallback_markdown,
+            "html_report": fallback_html,
             "si_matrix": {},
             "bcs_score": 0.0,
             "control_usage": {
@@ -281,4 +373,3 @@ Unable to load joystick telemetry data. Please ensure stats.json file exists and
             "heatmap_path": None,
             "control_usage_path": None,
         }
-

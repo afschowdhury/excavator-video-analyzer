@@ -51,25 +51,38 @@ class ChartAnalysisAgent(BaseAgent):
 
         Args:
             input_data: Path to joystick data directory containing chart images
-            context: Optional context
+            context: Optional context dictionary. Can contain 'trial_id' for new data structure
 
         Returns:
             Dictionary containing markdown report and base64-encoded images
         """
-        self.log(f"Analyzing charts from {input_data}", "info")
-
-        # Determine image paths
-        if os.path.isdir(input_data):
-            base_dir = input_data
+        # Extract trial_id from context if provided
+        trial_id = context.get("trial_id") if context else None
+        
+        if trial_id:
+            self.log(f"Analyzing charts for trial ID: {trial_id}", "info")
         else:
-            base_dir = os.path.dirname(input_data)
+            self.log(f"Analyzing charts from {input_data}", "info")
 
-        heatmap_path = os.path.join(base_dir, "SI_Heatmap.png")
-        control_usage_path = os.path.join(base_dir, "control_usage.png")
+        # Determine image paths based on trial_id or old structure
+        if trial_id:
+            # New folder structure with trial_id
+            base_dir = Path(__file__).parent.parent.parent / "data" / "joystick_data"
+            heatmap_path = str(base_dir / "SI_Heatmaps" / f"SI_Heatmap_{trial_id}.png")
+            control_usage_path = str(base_dir / "Control_Usage" / f"control_usage_{trial_id}.png")
+        else:
+            # Old structure for backward compatibility
+            if os.path.isdir(input_data):
+                base_dir = input_data
+            else:
+                base_dir = os.path.dirname(input_data)
+
+            heatmap_path = os.path.join(base_dir, "SI_Heatmap.png")
+            control_usage_path = os.path.join(base_dir, "control_usage.png")
 
         # Check if images exist
         if not os.path.exists(heatmap_path) or not os.path.exists(control_usage_path):
-            self.log("Chart images not found, using fallback", "warning")
+            self.log(f"Chart images not found at {heatmap_path} or {control_usage_path}, using fallback", "warning")
             return self._generate_fallback_response()
 
         # Load and encode images
