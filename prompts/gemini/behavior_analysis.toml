@@ -40,6 +40,6 @@ For each frame or sequence analyzed, provide:
 Note: Severity applies mainly to "jerking" and "panic". For "smooth" or "neutral", use "low" or omit."""
 
 [config]
-model = "gemini-2.0-flash-exp"
+model = "gemini-3-pro-preview"
 temperature = 0.3
 response_mime_type = "application/json"

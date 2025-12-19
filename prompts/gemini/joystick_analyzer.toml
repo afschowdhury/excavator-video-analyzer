@@ -131,5 +131,5 @@ Please generate the response using strictly this HTML format (do not include <ht
 """
 
 [config]
-model = "gemini-2.5-pro"
+model = "gemini-3-pro-preview"
 temperature = 0.2

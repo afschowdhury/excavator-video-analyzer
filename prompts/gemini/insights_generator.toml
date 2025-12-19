@@ -39,7 +39,7 @@ content = """You are an expert excavator training analyst with decades of experi
 Provide your analysis as a structured JSON response."""
 
 [config]
-model = "gemini-2.0-flash-exp"
+model = "gemini-3-pro-preview"
 temperature = 0.4
 response_mime_type = "application/json"
 
