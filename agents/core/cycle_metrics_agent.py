@@ -2,6 +2,13 @@
 
 from typing import Any, Dict, List, Optional
 import statistics
+import base64
+
+try:
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
 
 from ..base_agent import BaseAgent
 
@@ -63,6 +70,9 @@ class CycleMetricsAgent(BaseAgent):
         target_cycle_time = 20.0
         efficiency_percentage = (target_cycle_time / avg_duration * 100) if avg_duration > 0 else 0
 
+        # Generate cycle trend chart
+        cycle_trend_chart = self._generate_cycle_trend_chart(input_data, avg_duration, target_cycle_time)
+
         metrics = {
             "total_cycles": total_cycles,
             "average_cycle_time": round(avg_duration, 2),
@@ -75,6 +85,7 @@ class CycleMetricsAgent(BaseAgent):
             "efficiency_percentage": round(efficiency_percentage, 1),
             "target_cycle_time": target_cycle_time,
             "cycles_data": input_data,
+            "cycle_trend_chart": cycle_trend_chart,
         }
 
         self.log(
@@ -109,4 +120,95 @@ class CycleMetricsAgent(BaseAgent):
             return "Declining (slower over time)"
         else:
             return "Stable"
+
+    def _generate_cycle_trend_chart(self, cycles_data: List[Dict[str, Any]], avg_time: float, target_time: float) -> str:
+        """
+        Generate cycle time trend chart matching Plotly style of existing charts
+        
+        Args:
+            cycles_data: List of cycle dictionaries
+            avg_time: Average cycle time
+            target_time: Target cycle time (benchmark)
+            
+        Returns:
+            Base64-encoded PNG image string with data URI prefix
+        """
+        if not PLOTLY_AVAILABLE:
+            self.log("Plotly not available, skipping chart generation", "warning")
+            return ""
+        
+        try:
+            # Extract data
+            cycle_numbers = [c.get('cycle_number', c.get('cycle_num', i+1)) 
+                           for i, c in enumerate(cycles_data)]
+            durations = [c['duration'] for c in cycles_data]
+            
+            # Create figure with cycle time line
+            fig = go.Figure()
+            
+            # Main cycle time line (matching Control Usage blue)
+            fig.add_trace(go.Scatter(
+                x=cycle_numbers,
+                y=durations,
+                mode='lines+markers',
+                name='Cycle Time',
+                line=dict(color='#4361ee', width=3),
+                marker=dict(size=8, color='#4361ee')
+            ))
+            
+            # Target line (20s benchmark) - green dashed
+            fig.add_hline(
+                y=target_time,
+                line=dict(color='#27ae60', width=2, dash='dash'),
+                annotation_text=f'Target ({target_time}s)',
+                annotation_position='right'
+            )
+            
+            # Average line - red dotted
+            fig.add_hline(
+                y=avg_time,
+                line=dict(color='#e74c3c', width=2, dash='dot'),
+                annotation_text=f'Avg ({avg_time:.1f}s)',
+                annotation_position='right'
+            )
+            
+            # Layout matching existing charts
+            fig.update_layout(
+                title=dict(
+                    text='Cycle Time Trend Analysis',
+                    x=0.5,
+                    font=dict(size=18, family='Arial', color='#333')
+                ),
+                xaxis=dict(
+                    title='Cycle Number',
+                    showgrid=True,
+                    gridcolor='rgba(0,0,0,0.08)',
+                    gridwidth=1
+                ),
+                yaxis=dict(
+                    title='Time (seconds)',
+                    showgrid=True,
+                    gridcolor='rgba(0,0,0,0.08)',
+                    gridwidth=1,
+                    zeroline=False
+                ),
+                width=650,
+                height=450,
+                font=dict(size=14, family='Arial'),
+                plot_bgcolor='#fff',
+                paper_bgcolor='#fff',
+                margin=dict(t=80, l=60, r=60, b=60),
+                showlegend=False  # Using annotations instead
+            )
+            
+            # Convert to base64 PNG
+            img_bytes = fig.to_image(format='png', scale=2)
+            image_base64 = base64.b64encode(img_bytes).decode()
+            
+            self.log("✓ Cycle trend chart generated", "success")
+            return f"data:image/png;base64,{image_base64}"
+            
+        except Exception as e:
+            self.log(f"Failed to generate cycle trend chart: {e}", "error")
+            return ""
 

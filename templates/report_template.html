@@ -287,6 +287,26 @@
             font-size: 0.9em;
         }
         
+        .hidden {
+            display: none;
+        }
+        
+        .timestamp-toggle-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+        
+        .timestamp-toggle-btn:hover {
+            background: #2980b9;
+        }
+        
         @media print {
             body { background: white; }
             .container { box-shadow: none; padding: 20px; }
@@ -425,6 +445,59 @@
                     </tr>
                 </tbody>
             </table>
+
+            <!-- Individual Cycle Times -->
+            {% if cycle_metrics.cycles_data and cycle_metrics.cycles_data|length > 0 %}
+            <h4 style="margin-top: 30px;">Individual Cycle Times</h4>
+            <button onclick="toggleCycleTimestamps()" class="timestamp-toggle-btn" id="timestampToggleBtn">
+                Show Timestamps
+            </button>
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Cycle #</th>
+                        <th class="timestamp-col hidden">Start Time</th>
+                        <th class="timestamp-col hidden">End Time</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cycle in cycle_metrics.cycles_data[:20] %}
+                    <tr>
+                        <td><strong>{{ cycle.cycle_number or cycle.cycle_num or loop.index }}</strong></td>
+                        <td class="timestamp-col hidden">{{ cycle.start_time }}</td>
+                        <td class="timestamp-col hidden">{{ cycle.end_time }}</td>
+                        <td>{{ cycle.duration }}s</td>
+                        <td class="{{ 'good' if cycle.duration <= cycle_metrics.target_cycle_time else 'needs-improvement' }}">
+                            {{ 'On Target' if cycle.duration <= cycle_metrics.target_cycle_time else 'Slower' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if cycle_metrics.cycles_data|length > 20 %}
+            <p style="margin-top: 10px; font-style: italic; color: #7f8c8d;">
+                ...and {{ cycle_metrics.cycles_data|length - 20 }} more cycles
+            </p>
+            {% endif %}
+            {% endif %}
+
+            <!-- Cycle Time Trend Chart -->
+            {% if cycle_metrics.cycle_trend_chart %}
+            <h4 style="margin-top: 30px;">Cycle Time Trend Analysis</h4>
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <img src="{{ cycle_metrics.cycle_trend_chart }}" 
+                         class="chart-image"
+                         alt="Line chart showing cycle times over the session with target and average benchmarks">
+                    <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #555;">
+                        Blue line shows actual cycle times, green dashed line indicates target ({{ cycle_metrics.target_cycle_time }}s), 
+                        and red dotted line shows operator's average ({{ cycle_metrics.average_cycle_time }}s).
+                    </p>
+                </div>
+            </div>
+            {% endif %}
         </section>
 
         <!-- Control Analytics -->
@@ -570,5 +643,19 @@
             <p>Data Sources: Video analysis, joystick telemetry, performance metrics database</p>
         </footer>
     </div>
+    
+    <script>
+    function toggleCycleTimestamps() {
+        const timestampCols = document.querySelectorAll('.timestamp-col');
+        const btn = document.getElementById('timestampToggleBtn');
+        
+        if (timestampCols.length > 0) {
+            const isHidden = timestampCols[0].classList.contains('hidden');
+            
+            timestampCols.forEach(col => col.classList.toggle('hidden'));
+            btn.textContent = isHidden ? 'Hide Timestamps' : 'Show Timestamps';
+        }
+    }
+    </script>
 </body>
 </html>
